@@ -6,18 +6,20 @@ import { Toaster } from "sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 
 // Pages
-import Login from "./pages/Login";
+import Login from "./pages/Login/index";
 import AppLayout from "./components/AppLayout";
-import StockRegistro from "./pages/StockRegistro";
-import Consumo from "./pages/Consumo";
-import Gestion from "./pages/Gestion";
-import Analiticas from "./pages/Analiticas";
-import GestionarMerma from "./pages/GestionarMerma";
-import Informes from "./pages/Informes";
-import Proyeccion from "./pages/Proyeccion";
-import Historial from "./pages/Historial";
-import Eventos from "./pages/Eventos";
-import Configuracion from "./pages/Configuracion";
+import StockRegistro from "./pages/StockRegistro/index";
+import Consumo from "./pages/Consumo/index";
+import Gestion from "./pages/Gestion/index";
+import Analiticas from "./pages/Analiticas/index";
+import GestionarMerma from "./pages/GestionarMerma/index";
+import Informes from "./pages/Informes/index";
+import Proyeccion from "./pages/Proyeccion/index";
+import Historial from "./pages/Historial/index";
+import Eventos from "./pages/Eventos/index";
+import Configuracion from "./pages/Configuracion/index";
+import Compras from "./pages/Compras/index";
+import ContarInventario from "./pages/ContarInventario/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -55,6 +57,8 @@ function App() {
                     <Route path="/historial" element={<Historial />} />
                     <Route path="/eventos" element={<Eventos />} />
                     <Route path="/configuracion" element={<Configuracion />} />
+                    <Route path="/compras" element={<Compras />} />
+                    <Route path="/contar-inventario" element={<ContarInventario />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

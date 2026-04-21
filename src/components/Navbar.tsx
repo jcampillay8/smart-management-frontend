@@ -1,15 +1,28 @@
-import { Bell, Search, User, LogOut, Moon, Sun, Settings } from "lucide-react";
+import { Bell, Search, User, LogOut, Moon, Sun, Settings, Menu } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { motion } from "framer-motion";
 
-export default function Navbar({ restaurantName }: { restaurantName: string }) {
+export default function Navbar({ 
+  restaurantName, 
+  onMenuClick 
+}: { 
+  restaurantName: string;
+  onMenuClick: () => void;
+}) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <header className="h-20 glass border-b border-border sticky top-0 z-30 px-8 flex items-center justify-between">
+    <header className="h-20 glass border-b border-border sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
       <div className="flex items-center gap-4 flex-1">
+        <button 
+          onClick={onMenuClick}
+          className="h-10 w-10 rounded-xl hover:bg-secondary flex items-center justify-center md:hidden transition-colors border border-border"
+        >
+          <Menu size={20} className="text-muted-foreground" />
+        </button>
+        
         <div className="relative max-w-md w-full hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <input 

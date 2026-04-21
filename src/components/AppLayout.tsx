@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import api from "../lib/api";
 
 export default function AppLayout() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [restaurantConfig, setRestaurantConfig] = useState<{ nombre: string; logo_url: string | null }>({
     nombre: "EasyStock Control",
     logo_url: null
@@ -29,10 +30,17 @@ export default function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
-      <Sidebar logo={restaurantConfig.logo_url} />
+      <Sidebar 
+        logo={restaurantConfig.logo_url} 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        <Navbar restaurantName={restaurantConfig.nombre} />
+        <Navbar 
+          restaurantName={restaurantConfig.nombre} 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+        />
         
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-6 md:p-8 lg:p-10">
           <motion.div
