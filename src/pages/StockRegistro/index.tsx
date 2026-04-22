@@ -3,17 +3,20 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { useBodega } from "../../hooks/useBodega";
-import { useStockData } from "./useStockData";
-import { StockTable } from "./StockTable";
-import { StockActions } from "./StockActions";
-import { MermaDialog } from "./MermaDialog";
-import { TransferDialog } from "./TransferDialog";
+import { useStockData } from "./hooks/useStockData"; 
+import { StockTable } from "./components/StockTable"; 
+import { StockActions } from "./components/StockActions"; 
+import { MermaDialog } from "./dialogs/MermaDialog"; 
+import { TransferDialog } from "./dialogs/TransferDialog"; 
+import { AdjustmentDialog } from "./dialogs/AdjustmentDialog"; 
+import { QuickMovePanel } from "./components/QuickMovePanel"; 
 import { Button } from "../../components/ui/button";
-import { Save, ClipboardList } from "lucide-react";
+import { Save, History, PanelRight } from "lucide-react"; // CAMBIADO: LayoutPanelRight -> PanelRight
 import BodegaSelector from "../../components/BodegaSelector";
 import api from "../../lib/api";
 import { toast } from "sonner";
 import { DisplayProduct } from "./types";
+import { cn } from "../../lib/utils"
 
 export default function StockRegistro() {
   const { selectedBodegaId: activeBodegaId } = useBodega();
@@ -21,40 +24,58 @@ export default function StockRegistro() {
   const queryParams = new URLSearchParams(location.search);
   const selectedBodegaId = queryParams.get("bodegaId") || activeBodegaId || "all";
 
-  // 1. Hook de datos
   const {
-    categorias, productos, entries, loading, saving, setSaving,
-    productBodegaMap, updateEntry, isDirty, loadData, today
+    categorias, productos, bodegas, entries, snapshot, loading, saving, setSaving,
+    productBodegaMap, updateEntry, isDirty, loadData, today,
+    toggleMultiExpiry, addExpiryEntry, removeExpiryEntry, updateExpiryEntry
   } = useStockData(selectedBodegaId, activeBodegaId || "");
 
-  // 2. Estados locales de UI
   const [searchTerm, setSearchTerm] = useState("");
   const [transferOpen, setTransferOpen] = useState(false);
   const [mermaOpen, setMermaOpen] = useState(false);
+  const [adjustmentOpen, setAdjustmentOpen] = useState(false);
+  const [showQuickActions, setShowQuickActions] = useState(false); // Estado para ocultar panel
   const [highlightedIds] = useState<Set<string>>(new Set());
 
-  // 3. Lógica de Filtrado
-  const filteredProducts = useMemo(() => {
-    let list: DisplayProduct[] = [];
-    if (selectedBodegaId === "all") {
-      // Si vemos todas, aplanamos productos por bodega
-      productos.forEach(p => {
-        const productBodegas = Array.from(productBodegaMap[p.id] || []);
-        productBodegas.forEach(bId => {
-          list.push({ ...p, _entryKey: `${p.id}::${bId}`, _bodegaName: bId });
+// src/pages/StockRegistro/index.tsx
+
+const filteredProducts = useMemo(() => {
+  let list: DisplayProduct[] = [];
+  
+  if (selectedBodegaId === "all") {
+    productos.forEach(p => {
+      const productBodegas = Array.from(productBodegaMap[p.id] || []);
+      productBodegas.forEach(bId => {
+        const bodegaName = bodegas.find(b => b.id === bId)?.nombre || bId;
+        
+        // Calculamos el stock actual para esta bodega específica desde el snapshot
+        const stockEnBodega = snapshot?.stockByProduct[p.id] || 0;
+
+        list.push({ 
+          ...p, 
+          _entryKey: `${p.id}::${bId}`, 
+          _bodegaName: bodegaName,
+          _lotesDisponibles: snapshot?.lotsByProduct[p.id] || [],
+          stock_actual: stockEnBodega // <-- SOLUCIÓN: Asignamos el valor requerido
         });
       });
-    } else {
-      list = productos
-        .filter(p => productBodegaMap[p.id]?.has(selectedBodegaId))
-        .map(p => ({ ...p, _entryKey: p.id }));
-    }
+    });
+  } else {
+    list = productos
+      .filter(p => productBodegaMap[p.id]?.has(selectedBodegaId))
+      .map(p => ({ 
+        ...p, 
+        _entryKey: p.id,
+        _lotesDisponibles: snapshot?.lotsByProduct[p.id] || [],
+        stock_actual: snapshot?.stockByProduct[p.id] || 0 // <-- SOLUCIÓN
+      }));
+  }
 
-    if (!searchTerm) return list;
-    return list.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
-  }, [productos, selectedBodegaId, productBodegaMap, searchTerm]);
+  return searchTerm 
+    ? list.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase())) 
+    : list;
+}, [productos, selectedBodegaId, productBodegaMap, searchTerm, snapshot, bodegas]);
 
-  // 4. Acción de Guardado Masivo
   const handleSave = async () => {
     if (!isDirty()) return;
     setSaving(true);
@@ -77,7 +98,7 @@ export default function StockRegistro() {
               });
             }
           });
-        } else if (entry.cantidad) {
+        } else if (entry.cantidad !== "") {
           movements.push({
             producto_id: prodId,
             cantidad: Number(entry.cantidad),
@@ -88,79 +109,110 @@ export default function StockRegistro() {
           });
         }
       });
-
       await api.post("/inventory/stock/bulk-movements", { movements });
-      toast.success("Inventario actualizado");
+      toast.success("Inventario sincronizado");
       loadData();
     } catch (error) {
-      toast.error("Error al guardar cambios");
+      toast.error("Error al guardar");
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Cargando inventario...</div>;
+  if (loading) return (
+    <div className="flex h-[60vh] items-center justify-center">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cargando Datastore...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="container mx-auto pb-24 space-y-6">
-      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Registro de Stock</h1>
-          <p className="text-muted-foreground text-sm">Control de existencias y vencimientos</p>
+    <div className="container mx-auto pb-32 space-y-8">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tighter">Registro de Stock</h1>
+          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+            Terminal de Control e Inventario
+          </p>
         </div>
-        <BodegaSelector />
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowQuickActions(!showQuickActions)}
+            className={cn(
+              "rounded-xl border-white/10 text-[10px] font-black uppercase transition-all",
+              showQuickActions && "bg-primary text-primary-foreground"
+            )}
+          >
+            <PanelRight className="h-4 w-4 mr-2" />
+            Acciones Rápidas
+          </Button>
+          <div className="bg-muted/50 p-2 rounded-2xl border border-white/5 shadow-inner">
+            <BodegaSelector />
+          </div>
+        </div>
       </header>
 
-      <StockActions 
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onOpenTransfer={() => setTransferOpen(true)}
-        onOpenMerma={() => setMermaOpen(true)}
-        isViewingAll={selectedBodegaId === "all"}
-      />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Lógica de grid dinámico para que la tabla se expanda */}
+        <div className={cn(
+          "transition-all duration-500 space-y-6",
+          showQuickActions ? "lg:col-span-9" : "lg:col-span-12"
+        )}>
+          <StockActions 
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            onOpenTransfer={() => setTransferOpen(true)}
+            onOpenMerma={() => setMermaOpen(true)}
+            onOpenAdjustment={() => setAdjustmentOpen(true)}
+            isViewingAll={selectedBodegaId === "all"}
+          />
 
-      <StockTable 
-        categorias={categorias}
-        filteredProducts={filteredProducts}
-        entries={entries}
-        canEdit={selectedBodegaId !== "all" || !!activeBodegaId}
-        isViewingAll={selectedBodegaId === "all"}
-        onUpdateEntry={updateEntry}
-        highlightedIds={highlightedIds}
-      />
+          <StockTable 
+            categorias={categorias}
+            filteredProducts={filteredProducts}
+            entries={entries}
+            canEdit={selectedBodegaId !== "all"}
+            isViewingAll={selectedBodegaId === "all"}
+            onUpdateEntry={updateEntry}
+            highlightedIds={highlightedIds}
+            toggleMultiExpiry={toggleMultiExpiry}
+            addExpiryEntry={addExpiryEntry}
+            removeExpiryEntry={removeExpiryEntry}
+            updateExpiryEntry={updateExpiryEntry}
+          />
+        </div>
 
-      {/* Barra de acciones flotante */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex gap-3 bg-background/80 backdrop-blur-md p-3 rounded-full border shadow-xl z-50">
-        <Button variant="outline" className="rounded-full gap-2">
-          <ClipboardList className="h-4 w-4" /> Historial
+        {showQuickActions && (
+          <aside className="lg:col-span-3 animate-in slide-in-from-right duration-500">
+            <QuickMovePanel />
+          </aside>
+        )}
+      </div>
+
+      {/* Floating Action Bar */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-black/80 backdrop-blur-xl p-3 px-6 rounded-full border border-white/10 shadow-2xl z-50">
+        <Button variant="ghost" className="rounded-full text-muted-foreground hover:text-white gap-2 text-[10px] font-black uppercase">
+          <History className="h-4 w-4" />
+          Log
         </Button>
+        <div className="h-6 w-[1px] bg-white/10" />
         <Button 
           onClick={handleSave} 
           disabled={!isDirty() || saving} 
-          className="rounded-full gap-2 px-8"
+          className="rounded-full gap-3 px-8 bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20"
         >
-          <Save className="h-4 w-4" />
-          {saving ? "Guardando..." : "Guardar Cambios"}
+          <Save className={cn("h-4 w-4", saving && "animate-spin")} />
+          {saving ? "Guardando..." : "Sincronizar"}
         </Button>
       </div>
 
-      <MermaDialog 
-        open={mermaOpen} 
-        onOpenChange={setMermaOpen}
-        productos={productos}
-        bodegas={[]} // Aquí deberías pasar la lista de bodegas si la tienes en el contexto
-        productBodegaMap={productBodegaMap}
-        onSuccess={loadData}
-      />
-
-      <TransferDialog 
-        open={transferOpen}
-        onOpenChange={setTransferOpen}
-        productos={productos}
-        bodegas={[]} // Igual aquí
-        productBodegaMap={productBodegaMap}
-        onSuccess={loadData}
-      />
+      <MermaDialog open={mermaOpen} onOpenChange={setMermaOpen} productos={productos} bodegas={bodegas} productBodegaMap={productBodegaMap} onSuccess={loadData} />
+      <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} productos={productos} bodegas={bodegas} productBodegaMap={productBodegaMap} onSuccess={loadData} />
+      <AdjustmentDialog open={adjustmentOpen} onOpenChange={setAdjustmentOpen} productos={productos} bodegas={bodegas} onSuccess={loadData} />
     </div>
   );
 }

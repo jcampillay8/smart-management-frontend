@@ -16,6 +16,7 @@ export interface InventoryLot {
 export interface InventorySnapshot {
   lotsByProduct: Record<string, InventoryLot[]>;
   totalByProduct: Record<string, number>;
+  stockByProduct: Record<string, number>;
 }
 
 const CURRENT_BATCH_WINDOW_MS = 5000;
@@ -128,5 +129,5 @@ export const buildInventorySnapshot = (records: InventoryMovementRecord[], upTo?
     totalByProduct[productId] = lots.reduce((sum, lot) => sum + lot.cantidad, 0);
   });
 
-  return { lotsByProduct, totalByProduct };
+  return { lotsByProduct, totalByProduct, stockByProduct: totalByProduct };
 };
