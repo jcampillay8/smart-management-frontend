@@ -41,7 +41,7 @@ export function StockActions({
           <Search className="h-4 w-4 text-primary" />
         </div>
         <Input
-          placeholder="Filtrar por nombre de producto..."
+          placeholder="Filtrar por nombre de producto / categoria..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-12 h-12 bg-muted/20 border-white/5 rounded-xl text-sm font-medium transition-all focus:ring-primary/20 focus:bg-muted/40"

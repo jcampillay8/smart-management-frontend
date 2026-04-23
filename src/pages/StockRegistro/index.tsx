@@ -37,44 +37,56 @@ export default function StockRegistro() {
   const [showQuickActions, setShowQuickActions] = useState(false); // Estado para ocultar panel
   const [highlightedIds] = useState<Set<string>>(new Set());
 
-// src/pages/StockRegistro/index.tsx
+  const filteredProducts = useMemo(() => {
+    let list: DisplayProduct[] = [];
+    
+    if (selectedBodegaId === "all") {
+      productos.forEach(p => {
+        const productBodegas = Array.from(productBodegaMap[p.id] || []);
+        productBodegas.forEach(bId => {
+          const bodegaName = bodegas.find(b => b.id === bId)?.nombre || bId;
+          const stockEnBodega = snapshot?.stockByProduct[p.id] || 0;
 
-const filteredProducts = useMemo(() => {
-  let list: DisplayProduct[] = [];
-  
-  if (selectedBodegaId === "all") {
-    productos.forEach(p => {
-      const productBodegas = Array.from(productBodegaMap[p.id] || []);
-      productBodegas.forEach(bId => {
-        const bodegaName = bodegas.find(b => b.id === bId)?.nombre || bId;
-        
-        // Calculamos el stock actual para esta bodega específica desde el snapshot
-        const stockEnBodega = snapshot?.stockByProduct[p.id] || 0;
-
-        list.push({ 
-          ...p, 
-          _entryKey: `${p.id}::${bId}`, 
-          _bodegaName: bodegaName,
-          _lotesDisponibles: snapshot?.lotsByProduct[p.id] || [],
-          stock_actual: stockEnBodega // <-- SOLUCIÓN: Asignamos el valor requerido
+          list.push({ 
+            ...p, 
+            _entryKey: `${p.id}::${bId}`, 
+            _bodegaName: bodegaName,
+            _lotesDisponibles: snapshot?.lotsByProduct[p.id] || [],
+            stock_actual: stockEnBodega
+          });
         });
       });
-    });
-  } else {
-    list = productos
-      .filter(p => productBodegaMap[p.id]?.has(selectedBodegaId))
-      .map(p => ({ 
-        ...p, 
-        _entryKey: p.id,
-        _lotesDisponibles: snapshot?.lotsByProduct[p.id] || [],
-        stock_actual: snapshot?.stockByProduct[p.id] || 0 // <-- SOLUCIÓN
-      }));
-  }
+    } else {
+      list = productos
+        .filter(p => productBodegaMap[p.id]?.has(selectedBodegaId))
+        .map(p => ({ 
+          ...p, 
+          _entryKey: p.id,
+          _lotesDisponibles: snapshot?.lotsByProduct[p.id] || [],
+          stock_actual: snapshot?.stockByProduct[p.id] || 0
+        }));
+    }
 
-  return searchTerm 
-    ? list.filter(p => p.nombre.toLowerCase().includes(searchTerm.toLowerCase())) 
-    : list;
-}, [productos, selectedBodegaId, productBodegaMap, searchTerm, snapshot, bodegas]);
+    // --- NUEVA LÓGICA DE FILTRADO HÍBRIDO ---
+    if (!searchTerm) return list;
+
+    const term = searchTerm.toLowerCase();
+
+    return list.filter(p => {
+      // 1. Match por nombre del producto
+      const matchNombre = p.nombre.toLowerCase().includes(term);
+
+      // 2. Match por nombre de la categoría
+      // Buscamos la categoría en el array 'categorias' usando el ID del producto
+      const categoriaDelProducto = categorias.find(c => c.id === p.categoria_id);
+      const matchCategoria = categoriaDelProducto?.nombre.toLowerCase().includes(term);
+
+      // Retorna verdadero si coincide con cualquiera de los dos
+      return matchNombre || matchCategoria;
+    });
+
+    // Agregamos 'categorias' a las dependencias del memo
+  }, [productos, selectedBodegaId, productBodegaMap, searchTerm, snapshot, bodegas, categorias]);
 
   const handleSave = async () => {
     if (!isDirty()) return;
