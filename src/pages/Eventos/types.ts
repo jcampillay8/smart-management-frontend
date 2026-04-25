@@ -18,11 +18,20 @@ export interface EventoReceta {
   cantidad: number;
 }
 
+export interface Receta {
+  id: string;
+  nombre: string;
+  precio: number;
+  iva_incluido?: boolean;
+  iva_porcentaje?: number;
+}
+
 export interface Evento {
   id: string;
   nombre: string;
   fecha: string;
   items: EventoItem[];
+  recetas: EventoReceta[];
   ejecutado: boolean;
   cancelado: boolean;
   valor_publico?: number | null;

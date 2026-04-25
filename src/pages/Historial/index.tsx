@@ -3,40 +3,53 @@ import { useHistorial } from "./useHistorial";
 import { useBodega } from "../../hooks/useBodega";
 import { TablaHistorial } from "./TablaHistorial";
 import { FiltrosHistorial } from "./FiltrosHistorial";
-import { History, Download } from "lucide-react";
-import { Button } from "../../components/ui/button";
+import BodegaSelector from "../../components/BodegaSelector";
+import { History, Lock } from "lucide-react";
 
 export default function HistorialPage() {
   const { selectedBodegaId, bodegas } = useBodega();
-  const { filtered, loading, filtros } = useHistorial(selectedBodegaId);
+  const { filtered, loading, productos, filtros, computeBeforeAfter, prodName, prodUnit } = useHistorial(
+    selectedBodegaId
+  );
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <History className="h-6 w-6 text-primary" /> Historial de Movimientos
-          </h1>
-          <p className="text-sm text-muted-foreground">Auditoría completa de entradas, salidas y mermas.</p>
-        </div>
-        <Button variant="outline" size="sm">
-          <Download className="h-4 w-4 mr-2" /> Exportar CSV
-        </Button>
-      </header>
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        <History className="h-5 w-5 text-primary" />
+        <h1 className="text-xl font-bold">Historial de Movimientos</h1>
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+          <Lock className="h-3 w-3" /> Inmutable
+        </span>
+      </div>
 
-      {/* Componente de Filtros que usa los estados del hook */}
-      <FiltrosHistorial 
-        tipo={filtros.tipo} 
-        setTipo={filtros.setTipo} 
-        fecha={filtros.fecha} 
-        setFecha={filtros.setFecha} 
+      <BodegaSelector />
+
+      <FiltrosHistorial
+        filtroProducto={filtros.filtroProducto}
+        setFiltroProducto={filtros.setFiltroProducto}
+        filtroTipo={filtros.filtroTipo}
+        setFiltroTipo={filtros.setFiltroTipo}
+        fechaDesde={filtros.fechaDesde}
+        setFechaDesde={filtros.setFechaDesde}
+        fechaHasta={filtros.fechaHasta}
+        setFechaHasta={filtros.setFechaHasta}
+        productos={productos}
       />
 
-      <TablaHistorial 
-        data={filtered} 
-        productos={[]} // Aquí pasarías tu lista de productos global
-        bodegas={bodegas} 
-      />
+      {loading ? (
+        <div className="py-12 text-center text-muted-foreground">Cargando historial...</div>
+      ) : (
+        <>
+          <TablaHistorial
+            data={filtered}
+            computeBeforeAfter={computeBeforeAfter}
+            prodUnit={prodUnit}
+          />
+          <p className="text-xs text-muted-foreground">
+            Mostrando {filtered.length} de {filtered.length} registros
+          </p>
+        </>
+      )}
     </div>
   );
 }

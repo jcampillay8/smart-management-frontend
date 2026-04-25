@@ -16,13 +16,13 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
 
   return (
     <div className={cn(
-      "p-4 rounded-2xl border border-white/5 space-y-4 transition-all",
-      isCritical ? "bg-red-500/10 border-red-500/20" : "bg-[#141414]/80",
+      "p-4 rounded-2xl border border-input space-y-4 transition-all",
+      isCritical ? "bg-destructive/10 border-destructive/30" : "bg-card",
       isHighlighted && "ring-2 ring-primary"
     )}>
       <div className="flex justify-between items-start">
         <div className="space-y-1">
-          <h3 className="font-bold text-white leading-none">{product.nombre}</h3>
+          <h3 className="font-bold text-foreground leading-none">{product.nombre}</h3>
           <div className="flex items-center gap-2">
             {product._bodegaName && <BodegaBadge nombre={product._bodegaName} />}
             <span className="text-[10px] text-muted-foreground uppercase font-black">{product.unidad}</span>
@@ -30,7 +30,7 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
         </div>
         <div className="text-right">
           <span className="text-[9px] text-muted-foreground uppercase font-bold block">Stock / Mín</span>
-          <span className={cn("text-sm font-mono font-black", isCritical ? "text-red-500" : "text-primary")}>
+          <span className={cn("text-sm font-mono font-black", isCritical ? "text-destructive" : "text-primary")}>
             {totalQty} / {product.stock_minimo}
           </span>
         </div>
@@ -43,7 +43,7 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
             type="date" 
             value={entry.fecha_recuento} 
             onChange={(e) => onUpdate(product._entryKey, "fecha_recuento", e.target.value)}
-            className="h-9 text-[11px] bg-black/20 border-white/5"
+            className="h-9 text-[11px] bg-background border-input"
           />
         </div>
         <div className="space-y-1.5">
@@ -53,7 +53,7 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
             value={entry.fecha_vencimiento} 
             disabled={entry.multiExpiry}
             onChange={(e) => onUpdate(product._entryKey, "fecha_vencimiento", e.target.value)}
-            className="h-9 text-[11px] bg-black/20 border-white/5"
+            className="h-9 text-[11px] bg-background border-input"
           />
         </div>
       </div>
@@ -65,12 +65,12 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
             type="number" 
             value={entry.cantidad}
             onChange={(e) => onUpdate(product._entryKey, "cantidad", e.target.value)}
-            className="h-10 text-center font-mono font-black bg-black/40 border-white/10"
+            className="h-10 text-center font-mono font-black bg-background border-input"
           />
         </div>
       )}
 
-      <div className="flex items-center justify-center gap-2 pt-2 border-t border-white/5">
+      <div className="flex items-center justify-center gap-2 pt-2 border-t border-input">
         <Checkbox 
           checked={entry.multiExpiry} 
           onCheckedChange={(c) => onUpdate(product._entryKey, "multiExpiry", !!c)}

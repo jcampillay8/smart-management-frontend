@@ -9,8 +9,15 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { buildInventorySnapshot } from "../../lib/inventory";
 import { useBodega } from "../../hooks/useBodega";
+import { format } from "date-fns";
+
+const MOTIVOS = [
+  { value: "vencimiento", label: "Vencimiento" },
+  { value: "daño", label: "Daño" },
+  { value: "error", label: "Error" },
+  { value: "otro", label: "Otro" },
+];
 
 interface MermaRegisterDialogProps {
   open: boolean;

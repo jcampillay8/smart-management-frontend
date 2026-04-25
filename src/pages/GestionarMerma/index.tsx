@@ -3,13 +3,39 @@ import { useState } from "react";
 import { TrendingDown, Plus, Search } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useMerma } from "./useMerma";
+import { useBodega } from "../../hooks/useBodega";
 import { MermaStats } from "./MermaStats";
 import { MermaHistory } from "./MermaHistory";
 import { MermaRegisterDialog } from "./MermaRegisterDialog";
 
+const TIME_RANGES = [
+  { value: "1w", label: "1 semana" },
+  { value: "1m", label: "1 mes" },
+  { value: "6m", label: "6 meses" },
+  { value: "1y", label: "1 año" },
+];
+
 export default function GestionarMerma() {
-  const { mermas, productos, loading, stats, timeRange, setTimeRange, loadData } = useMerma();
+  const { selectedBodegaId } = useBodega();
+  const {
+    mermas,
+    productos,
+    loading,
+    timeRange,
+    setTimeRange,
+    loadData,
+    stats7d,
+    stats30d,
+    chartData,
+    topProducts,
+    tips,
+    getMermaLevel,
+    getProductName,
+    getProductUnit,
+  } = useMerma();
+
   const [busqueda, setBusqueda] = useState("");
   const [isRegisterOpen, setRegisterOpen] = useState(false);
 
@@ -29,7 +55,14 @@ export default function GestionarMerma() {
         </Button>
       </div>
 
-      <MermaStats data={mermas} totalLost={stats.totalLost} />
+      <MermaStats
+        stats7d={stats7d}
+        stats30d={stats30d}
+        chartData={chartData}
+        topProducts={topProducts}
+        tips={tips}
+        getMermaLevel={getMermaLevel}
+      />
 
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
         <div className="p-4 border-b bg-muted/30 flex items-center justify-between gap-4">
@@ -42,18 +75,25 @@ export default function GestionarMerma() {
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-          <select 
-            value={timeRange} 
-            onChange={e => setTimeRange(e.target.value)}
-            className="text-sm border rounded px-2 py-1 bg-background"
-          >
-            <option value="week">Última Semana</option>
-            <option value="month">Último Mes</option>
-            <option value="year">Último Año</option>
-          </select>
+          <Select value={timeRange} onValueChange={setTimeRange}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TIME_RANGES.map(r => (
+                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
-        <MermaHistory mermas={mermas} productos={productos} busqueda={busqueda} />
+        <MermaHistory 
+          mermas={mermas} 
+          productos={productos} 
+          busqueda={busqueda}
+          getProductName={getProductName}
+          getProductUnit={getProductUnit}
+        />
       </div>
 
       <MermaRegisterDialog 

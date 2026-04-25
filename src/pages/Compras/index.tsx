@@ -1,25 +1,83 @@
 // src/pages/Compras/index.tsx
 import { useState } from "react";
-import { ShoppingCart, Plus, BarChart3 } from "lucide-react";
+import { ShoppingCart, Plus, BarChart3, Clock, CheckCircle2, XCircle, Truck, PackageCheck, Upload, Share2, Pencil, RotateCcw } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { useAuth } from "../../hooks/useAuth";
 import { cn } from "../../lib/utils";
 import { useCompras } from "./useCompras";
 import { CompraTable } from "./CompraTable";
 import { CompraDetailDialog } from "./CompraDetailDialog";
-import CompraDialog from "../../components/CompraDialog"; // El que usas para crear
-import { SubTab, Compra } from "./types";
+import CompraDialog from "../../components/CompraDialog";
+import { SubTab, Compra, ConfirmAction, ConfirmInfo } from "./types";
 
 export default function Compras() {
   const { isAdmin } = useAuth();
-  const { compras, loading, deleteCompra, loadAll } = useCompras();
-  const [subTab, setSubTab] = useState<SubTab>("realizadas");
+  const { 
+    compras, loading, loadAll, 
+    deleteCompra, cancelCompra, restoreCompra, 
+    markPedido, receiveCompra 
+  } = useCompras();
+  
+  const [subTab, setSubTab] = useState<SubTab>("pendientes");
   const [viewing, setViewing] = useState<Compra | null>(null);
   const [compraDialog, setCompraDialog] = useState(false);
+  const [editingCompra, setEditingCompra] = useState<Compra | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
   const filtered = compras.filter(c => c.estado === subTab);
 
-  if (loading) return <div className="p-8 text-center">Cargando compras...</div>;
+  const confirmInfo: Record<ConfirmAction["kind"], ConfirmInfo> = {
+    delete: {
+      title: "¿Eliminar esta compra?",
+      description: "Esta acción no se puede deshacer. Se eliminarán todos los items asociados.",
+      actionLabel: "Eliminar",
+      danger: true,
+    },
+    cancel: {
+      title: "¿Cancelar esta compra?",
+      description: "La compra se moverá a la sección de canceladas. Podrás restaurarla más tarde.",
+      actionLabel: "Cancelar compra",
+      danger: true,
+    },
+    restore: {
+      title: "¿Restaurar esta compra?",
+      description: "La compra volverá a la sección de pendientes.",
+      actionLabel: "Restaurar",
+    },
+    pedido: {
+      title: "¿Confirmar pedido?",
+      description: "El pedido quedará marcado como realizado al proveedor. La tarjeta cambiará de color.",
+      actionLabel: "Sí, hacer pedido",
+    },
+    ingresar: {
+      title: "¿Ingresar mercadería?",
+      description: "Esto moverá la compra a la sección 'Recibidas' y actualizará el stock.",
+      actionLabel: "Sí, ingresar",
+    },
+  };
+
+  const runConfirmAction = async () => {
+    if (!confirmAction) return;
+    const { kind, id } = confirmAction;
+    if (kind === "delete") await deleteCompra(id);
+    if (kind === "cancel") await cancelCompra(id);
+    if (kind === "restore") await restoreCompra(id);
+    if (kind === "pedido") await markPedido(id);
+    if (kind === "ingresar") await receiveCompra(id);
+    setConfirmAction(null);
+  };
+
+  const getStatusIcon = (estado: string, pedido: boolean) => {
+    if (estado === "realizada") return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
+    if (estado === "pendientes" && pedido) return <Truck className="h-4 w-4 text-purple-500" />;
+    return <Clock className="h-4 w-4 text-amber-500" />;
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -27,45 +85,86 @@ export default function Compras() {
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <ShoppingCart className="h-6 w-6 text-primary" /> Gestión de Compras
         </h1>
-        <Button onClick={() => setCompraDialog(true)} className="gap-2">
+        <Button onClick={() => setCompraDialog(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
           <Plus className="h-4 w-4" /> Nueva Compra
         </Button>
       </div>
 
-      <div className="flex gap-1 border-b overflow-x-auto">
-        {(["realizadas", "pendientes", "canceladas"] as SubTab[]).map(tab => (
-          <button
-            key={tab}
-            onClick={() => setSubTab(tab)}
-            className={cn("px-4 py-2 text-sm font-medium border-b-2 transition-colors capitalize whitespace-nowrap",
-              subTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {tab}
-          </button>
-        ))}
+      {/* Sub-tabs */}
+      <div className="flex gap-1 rounded-lg bg-muted p-1 overflow-x-auto">
+        {([
+          { key: "pendientes", icon: Clock },
+          { key: "realizadas", icon: CheckCircle2 },
+          { key: "canceladas", icon: XCircle },
+        ] as { key: SubTab; icon: any }[]).map(tab => {
+          const Icon = tab.icon;
+          const isActive = subTab === tab.key;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setSubTab(tab.key)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
+                isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" /> 
+              {tab.key === "pendientes" ? "Pendientes" : tab.key === "realizadas" ? "Recibidas" : "Canceladas"}
+            </button>
+          );
+        })}
       </div>
 
+      {/* List */}
       <div className="bg-card rounded-xl border shadow-sm">
         <CompraTable 
           compras={filtered} 
+          subTab={subTab}
           onView={setViewing} 
-          onDelete={deleteCompra} 
-          isAdmin={!!isAdmin} 
+          onEdit={(c) => { setEditingCompra(c); setCompraDialog(true); }}
+          onAction={(action) => setConfirmAction(action)}
+          onShare={(c) => {
+            const text = `Compra ${c.fecha}\nProveedor: ${c.proveedor || "N/A"}\nTotal: $${c.total}`;
+            navigator.clipboard.writeText(text);
+          }}
         />
       </div>
 
-      {/* Diálogos */}
+      {/* Detail Dialog */}
       <CompraDetailDialog 
         compra={viewing} 
         onClose={() => setViewing(null)} 
       />
-      
+
+      {/* Create/Edit Dialog */}
       <CompraDialog 
         open={compraDialog} 
-        onOpenChange={setCompraDialog} 
+        onOpenChange={(open) => { 
+          setCompraDialog(open); 
+          if (!open) setEditingCompra(null); 
+        }} 
+        editingCompra={editingCompra}
         onSaved={loadAll} 
       />
+
+      {/* Confirm Alert Dialog */}
+      {confirmAction && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg border p-6 max-w-sm w-full space-y-4">
+            <h2 className="text-lg font-bold">{confirmInfo[confirmAction.kind].title}</h2>
+            <p className="text-sm text-muted-foreground">{confirmInfo[confirmAction.kind].description}</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setConfirmAction(null)}>Cancelar</Button>
+              <Button 
+                onClick={runConfirmAction}
+                className={cn(confirmInfo[confirmAction.kind].danger && "bg-destructive text-destructive-foreground")}
+              >
+                {confirmInfo[confirmAction.kind].actionLabel}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

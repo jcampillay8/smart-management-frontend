@@ -1,34 +1,94 @@
 // src/pages/Consumo/useConsumo.ts
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import api from "../../lib/api";
 import { toast } from "sonner";
-import { Producto, Receta, CartItem } from "./types";
+import { format } from "date-fns";
+import { Categoria, Producto, Receta, CartItem, ConsumptionRecord } from "./types";
 
-export function useConsumo() {
+export function useConsumo(bodegaId: string = "all") {
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [recetas, setRecetas] = useState<Receta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
-
-  useEffect(() => {
-    loadData();
-  }, []);
+  const [stockByProduct, setStockByProduct] = useState<Record<string, number>>({});
+  const [lotsByProduct, setLotsByProduct] = useState<Record<string, { fecha_vencimiento: string; cantidad: number }[]>>({});
+  const [consumptionLog, setConsumptionLog] = useState<ConsumptionRecord[]>([]);
 
   const loadData = async () => {
     try {
-      const [prodRes, recetaRes] = await Promise.all([
+      const today = new Date().toISOString().split("T")[0];
+      const [catRes, prodRes, stockRes, recetaRes, logRes] = await Promise.all([
+        api.get("/inventory/categories"),
         api.get("/inventory/products"),
+        api.get(`/inventory/stock/status?bodega_id=${bodegaId}`),
         api.get("/operations/recipes/"),
+        api.get(`/inventory/history/?tipo_movimiento=consumo&fecha_desde=${today}&fecha_hasta=${today}`),
       ]);
-      setProductos(prodRes.data);
-      setRecetas(recetaRes.data);
+
+      setCategorias(catRes.data || []);
+      setProductos(prodRes.data || []);
+      setRecetas(recetaRes.data || []);
+      setConsumptionLog(logRes.data || []);
+
+      const stockMap: Record<string, number> = {};
+      const lotsMap: Record<string, { fecha_vencimiento: string; cantidad: number }[]> = {};
+      
+      (stockRes.data || []).forEach((s: any) => {
+        const prodId = s.producto_id;
+        if (!stockMap[prodId]) {
+          stockMap[prodId] = 0;
+          lotsMap[prodId] = [];
+        }
+        stockMap[prodId] += s.stock_actual;
+        if (s.stock_actual > 0) {
+          lotsMap[prodId].push({
+            fecha_vencimiento: s.fecha_vencimiento || "",
+            cantidad: s.stock_actual,
+          });
+        }
+      });
+
+      setStockByProduct(stockMap);
+      setLotsByProduct(lotsMap);
     } catch (e) {
+      console.error("Error loading data:", e);
       toast.error("Error al cargar datos");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, [bodegaId]);
+
+  const getStock = (productoId: string): number => {
+    return stockByProduct[productoId] ?? 0;
+  };
+
+  const getLots = (productoId: string): { fecha_vencimiento: string; cantidad: number }[] => {
+    return lotsByProduct[productoId] ?? [];
+  };
+
+  const filteredProducts = useMemo(() => {
+    return productos.filter(p => {
+      const stock = stockByProduct[p.id] ?? 0;
+      const hasLots = (lotsByProduct[p.id] ?? []).length > 0;
+      if (stock === 0 && !hasLots) return false;
+      return true;
+    });
+  }, [productos, stockByProduct, lotsByProduct]);
+
+  const groupedProducts = useMemo(() => {
+    return categorias
+      .map(c => ({
+        ...c,
+        productos: filteredProducts.filter(p => p.categoria_id === c.id),
+      }))
+      .filter(c => c.productos.length > 0);
+  }, [categorias, filteredProducts]);
 
   const addToCart = (item: any, type: "producto" | "receta") => {
     setCart(prev => {
@@ -43,7 +103,7 @@ export function useConsumo() {
         type, 
         quantity: 1, 
         name: item.nombre, 
-        unit: type === "producto" ? item.unidad : "serv." 
+        unit: type === "producto" ? item.unidad : "serv."
       }];
     });
     toast.success(`${item.nombre} agregado`);
@@ -58,8 +118,37 @@ export function useConsumo() {
     setCart(prev => prev.map(i => i.id === id && i.type === type ? { ...i, quantity: qty } : i));
   };
 
+  const hasStockForRecipe = (receta: Receta, qty: number): boolean => {
+    const ingredients = receta.ingredientes || [];
+    for (const ing of ingredients) {
+      const needed = ing.cantidad * qty;
+      const available = stockByProduct[ing.producto_id] ?? 0;
+      if (available < needed) return false;
+    }
+    return true;
+  };
+
+  const refreshLog = () => {
+    loadData();
+  };
+
   return {
-    productos, recetas, cart, loading, saving,
-    setSaving, setCart, addToCart, removeFromCart, updateQuantity
+    productos: filteredProducts,
+    categorias,
+    recetas,
+    cart,
+    loading,
+    saving,
+    setSaving,
+    setCart,
+    addToCart,
+    removeFromCart,
+    updateQuantity,
+    getStock,
+    getLots,
+    groupedProducts,
+    hasStockForRecipe,
+    consumptionLog,
+    refreshLog,
   };
 }

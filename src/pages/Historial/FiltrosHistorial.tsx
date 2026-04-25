@@ -1,90 +1,129 @@
 // src/pages/Historial/FiltrosHistorial.tsx
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Button } from "../../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover";
-import { Calendar } from "../../components/ui/calendar"; // O EnhancedCalendar según tu lib
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { CalendarIcon, FilterX, ListFilter } from "lucide-react";
+import { EnhancedCalendar } from "../../components/ui/enhanced-calendar";
+import { format, isSameDay } from "date-fns";
+import { CalendarIcon, FilterX, ListFilter, Package } from "lucide-react";
 import { cn } from "../../lib/utils";
-import { TipoMovimiento } from "./types";
+import { TipoMovimiento, Producto } from "./types";
+
+const TIPOS: { value: TipoMovimiento; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "conteo", label: "Conteo" },
+  { value: "consumo", label: "Consumo" },
+  { value: "merma", label: "Merma" },
+  { value: "ajuste", label: "Ajuste" },
+  { value: "transferencia", label: "Transferencia" },
+];
 
 interface Props {
-  tipo: TipoMovimiento;
-  setTipo: (tipo: TipoMovimiento) => void;
-  fecha: Date | undefined;
-  setFecha: (fecha: Date | undefined) => void;
+  filtroProducto: string;
+  setFiltroProducto: (v: string) => void;
+  filtroTipo: TipoMovimiento;
+  setFiltroTipo: (v: TipoMovimiento) => void;
+  fechaDesde: Date | undefined;
+  setFechaDesde: (v: Date | undefined) => void;
+  fechaHasta: Date | undefined;
+  setFechaHasta: (v: Date | undefined) => void;
+  productos: Producto[];
 }
 
-export function FiltrosHistorial({ tipo, setTipo, fecha, setFecha }: Props) {
-  
+export function FiltrosHistorial({
+  filtroProducto,
+  setFiltroProducto,
+  filtroTipo,
+  setFiltroTipo,
+  fechaDesde,
+  setFechaDesde,
+  fechaHasta,
+  setFechaHasta,
+  productos,
+}: Props) {
+  const hasFilters =
+    filtroProducto !== "all" ||
+    filtroTipo !== "all" ||
+    fechaDesde ||
+    fechaHasta;
+
   const clearFilters = () => {
-    setTipo("all");
-    setFecha(new Date());
+    setFiltroProducto("all");
+    setFiltroTipo("all");
+    setFechaDesde(undefined);
+    setFechaHasta(undefined);
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-4 items-end bg-muted/20 p-4 rounded-xl border">
-      {/* Selector de Tipo de Movimiento */}
-      <div className="space-y-1.5 w-full md:w-64">
-        <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1 flex items-center gap-1">
-          <ListFilter className="h-3 w-3" /> Tipo de Movimiento
-        </label>
-        <Select value={tipo} onValueChange={(v) => setTipo(v as TipoMovimiento)}>
-          <SelectTrigger className="bg-background">
-            <SelectValue placeholder="Filtrar por tipo" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos los movimientos</SelectItem>
-            <SelectItem value="conteo">📦 Conteos (Inventario)</SelectItem>
-            <SelectItem value="consumo">🍽️ Consumos</SelectItem>
-            <SelectItem value="merma">🗑️ Mermas / Bajas</SelectItem>
-            <SelectItem value="compra">🛒 Compras / Entradas</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <Select value={filtroProducto} onValueChange={setFiltroProducto}>
+        <SelectTrigger className="w-full sm:w-52">
+          <SelectValue placeholder="Producto" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">Todos los productos</SelectItem>
+          {productos.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              {p.nombre}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      {/* Selector de Fecha */}
-      <div className="space-y-1.5 w-full md:w-64">
-        <label className="text-[10px] font-bold uppercase text-muted-foreground ml-1 flex items-center gap-1">
-          <CalendarIcon className="h-3 w-3" /> Fecha de Registro
-        </label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal bg-background",
-                !fecha && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {fecha ? format(fecha, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={fecha}
-              onSelect={setFecha}
-              initialFocus
-              locale={es}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
+      <Select value={filtroTipo} onValueChange={(v) => setFiltroTipo(v as TipoMovimiento)}>
+        <SelectTrigger className="w-full sm:w-40">
+          <SelectValue placeholder="Tipo" />
+        </SelectTrigger>
+        <SelectContent>
+          {TIPOS.map((t) => (
+            <SelectItem key={t.value} value={t.value}>
+              {t.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
 
-      {/* Botón de Limpiar */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={clearFilters}
-        className="text-muted-foreground hover:text-primary h-10 px-3"
-      >
-        <FilterX className="h-4 w-4 mr-2" />
-        Limpiar
-      </Button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full sm:w-40 justify-start",
+              !fechaDesde && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {fechaDesde ? format(fechaDesde, "dd/MM/yyyy") : "Desde"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start" side="bottom" avoidCollisions={false}>
+          <EnhancedCalendar mode="single" selected={fechaDesde} onSelect={setFechaDesde} />
+        </PopoverContent>
+      </Popover>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className={cn(
+              "w-full sm:w-40 justify-start",
+              !fechaHasta && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {fechaHasta ? format(fechaHasta, "dd/MM/yyyy") : "Hasta"}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start" side="bottom" avoidCollisions={false}>
+          <EnhancedCalendar mode="single" selected={fechaHasta} onSelect={setFechaHasta} />
+        </PopoverContent>
+      </Popover>
+
+      {hasFilters && (
+        <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <FilterX className="h-4 w-4 mr-2" />
+          Limpiar filtros
+        </Button>
+      )}
     </div>
   );
 }

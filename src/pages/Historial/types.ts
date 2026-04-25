@@ -9,7 +9,17 @@ export interface RegistroMovimiento {
   created_at: string;
   bodega_id: string;
   descripcion_merma: string | null;
+  fecha_vencimiento: string | null;
+  fecha_recuento: string;
   user_display_name?: string;
+  nombre_producto?: string;
+  nombre_bodega?: string;
 }
 
-export type TipoMovimiento = "all" | "conteo" | "consumo" | "merma" | "compra";
+export type TipoMovimiento = "all" | "conteo" | "consumo" | "merma" | "ajuste" | "transferencia" | "compra";
+
+export interface Producto {
+  id: string;
+  nombre: string;
+  unidad: string;
+}

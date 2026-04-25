@@ -33,7 +33,7 @@ export function StockActions({
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col xl:flex-row gap-4 items-center justify-between bg-card/40 backdrop-blur-md p-4 rounded-2xl border border-white/5 shadow-xl">
+    <div className="flex flex-col xl:flex-row gap-4 items-center justify-between bg-card backdrop-blur-md p-4 rounded-2xl border border-input shadow-xl">
       
       {/* Buscador de alta visibilidad */}
       <div className="relative w-full xl:w-[450px] group">
@@ -44,7 +44,7 @@ export function StockActions({
           placeholder="Filtrar por nombre de producto / categoria..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-12 h-12 bg-muted/20 border-white/5 rounded-xl text-sm font-medium transition-all focus:ring-primary/20 focus:bg-muted/40"
+          className="pl-12 h-12 bg-background border-input rounded-xl text-sm font-medium transition-all focus:ring-primary/20"
         />
       </div>
 
@@ -55,7 +55,7 @@ export function StockActions({
         <Button 
           variant="outline" 
           onClick={() => navigate("/compras")}
-          className="h-11 px-5 gap-2.5 rounded-xl border-white/10 hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
+          className="h-11 px-5 gap-2.5 rounded-xl border-input hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
         >
           <Plus className="h-4 w-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">Entrada</span>
@@ -65,7 +65,7 @@ export function StockActions({
         <Button 
           variant="outline" 
           onClick={onOpenTransfer}
-          className="h-11 px-5 gap-2.5 rounded-xl border-white/10 hover:bg-blue-500/10 hover:text-blue-400 transition-all active:scale-95"
+          className="h-11 px-5 gap-2.5 rounded-xl border-input hover:bg-blue-500/10 hover:text-blue-400 transition-all active:scale-95"
         >
           <ArrowLeftRight className="h-4 w-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">Mover</span>
@@ -75,13 +75,13 @@ export function StockActions({
         <Button 
           variant="outline" 
           onClick={onOpenAdjustment}
-          className="h-11 px-5 gap-2.5 rounded-xl border-white/10 hover:bg-amber-500/10 hover:text-amber-400 transition-all active:scale-95"
+          className="h-11 px-5 gap-2.5 rounded-xl border-input hover:bg-amber-500/10 hover:text-amber-400 transition-all active:scale-95"
         >
           <Settings2 className="h-4 w-4" />
           <span className="text-[10px] font-black uppercase tracking-widest">Ajustar</span>
         </Button>
 
-        <div className="hidden sm:block w-[1px] h-8 bg-white/5 mx-1" />
+        <div className="hidden sm:block w-[1px] h-8 bg-border mx-1" />
 
         {/* Merma (Destructivo) */}
         <Button 

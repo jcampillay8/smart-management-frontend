@@ -1,17 +1,19 @@
 // src/pages/Gestion/RecetaDialog.tsx
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import api from "../../lib/api";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Plus, Trash2, CookingPot, Info } from "lucide-react";
+import { Checkbox } from "../../components/ui/checkbox";
+import { Plus, Trash2, CookingPot, Info, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { formatMoney } from "../../lib/format";
 import { useBodega } from "../../hooks/useBodega";
 import { Producto, Receta } from "./types";
+import BodegaBadge from "../../components/BodegaBadge";
+import ImageUpload from "../../components/ImageUpload";
 
 interface RecetaDialogProps {
   open: boolean;
@@ -23,17 +25,34 @@ interface RecetaDialogProps {
 
 export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onSuccess }: RecetaDialogProps) {
   const { bodegas } = useBodega();
-  const [nombre, setNombre] = useState("");
-  const [precio, setPrecio] = useState("");
-  const [ingredientes, setIngredientes] = useState<{ producto_id: string; cantidad: number; bodega_id: string }[]>([]);
   const [saving, setSaving] = useState(false);
+
+  const [nombre, setNombre] = useState("");
+  const [precio, setPrecio] = useState("0");
+  const [categoriaRecetaId, setCategoriaRecetaId] = useState<string>("");
+  const [ivaIncluido, setIvaIncluido] = useState(false);
+  const [ivaPorcentaje, setIvaPorcentaje] = useState("19");
+  const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+  const [ingredientes, setIngredientes] = useState<{ producto_id: string; bodega_id: string; cantidad: string }[]>([]);
+  const [searchPerBodega, setSearchPerBodega] = useState<Record<string, string>>({});
+  const [searchFocus, setSearchFocus] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       if (editingReceta) {
         setNombre(editingReceta.nombre);
-        setPrecio(editingReceta.precio.toString());
-        setIngredientes(editingReceta.ingredientes || []);
+        setPrecio(String(editingReceta.precio));
+        setCategoriaRecetaId(editingReceta.categoria_receta_id ?? "");
+        setIvaIncluido(editingReceta.iva_incluido ?? false);
+        setIvaPorcentaje(String(editingReceta.iva_porcentaje ?? 19));
+        setImagenUrl(editingReceta.imagen_url ?? null);
+        setIngredientes(
+          (editingReceta.ingredientes || []).map(i => ({
+            producto_id: i.producto_id,
+            bodega_id: i.bodega_id,
+            cantidad: String(i.cantidad),
+          }))
+        );
       } else {
         resetForm();
       }
@@ -42,17 +61,28 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
 
   const resetForm = () => {
     setNombre("");
-    setPrecio("");
+    setPrecio("0");
+    setCategoriaRecetaId("");
+    setIvaIncluido(false);
+    setIvaPorcentaje("19");
+    setImagenUrl(null);
     setIngredientes([]);
+    setSearchPerBodega({});
   };
 
-  const addIngrediente = () => {
-    setIngredientes([...ingredientes, { producto_id: "", cantidad: 1, bodega_id: bodegas[0]?.id || "" }]);
+  const addIngrediente = (bodegaId: string, productoId: string) => {
+    if (ingredientes.find(i => i.producto_id === productoId && i.bodega_id === bodegaId)) {
+      toast.error("Producto ya agregado desde esta bodega");
+      return;
+    }
+    setIngredientes([...ingredientes, { producto_id: productoId, bodega_id: bodegaId, cantidad: "1" }]);
+    setSearchPerBodega(prev => ({ ...prev, [bodegaId]: "" }));
+    setSearchFocus(null);
   };
 
-  const updateIngrediente = (index: number, field: string, value: any) => {
+  const updateIngrediente = (index: number, field: string, value: string | number) => {
     const newIngredientes = [...ingredientes];
-    newIngredientes[index] = { ...newIngredientes[index], [field]: value };
+    newIngredientes[index] = { ...newIngredientes[index], [field]: String(value) };
     setIngredientes(newIngredientes);
   };
 
@@ -60,24 +90,49 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
     setIngredientes(ingredientes.filter((_, i) => i !== index));
   };
 
-  // Cálculo de costo dinámico
-  const costoEstimado = ingredientes.reduce((sum, ing) => {
-    const prod = productos.find(p => p.id === ing.producto_id);
-    return sum + (prod?.costo_unitario ?? 0) * (ing.cantidad || 0);
-  }, 0);
+  const getProductsForBodega = (bodegaId: string) => {
+    return productos.filter(p => {
+      const hasBodega = p.bodegas_config?.some(b => b.bodega_id === bodegaId);
+      if (!hasBodega) return false;
+      const search = searchPerBodega[bodegaId]?.toLowerCase() || "";
+      if (!search) return true;
+      return p.nombre.toLowerCase().includes(search);
+    });
+  };
+
+  const costoEstimado = useMemo(() => {
+    return ingredientes.reduce((sum, ing) => {
+      const prod = productos.find(p => p.id === ing.producto_id);
+      return sum + (prod?.costo_unitario ?? 0) * (Number(ing.cantidad) || 0);
+    }, 0);
+  }, [ingredientes, productos]);
 
   const handleSave = async () => {
-    if (!nombre || ingredientes.length === 0) {
-      toast.error("Nombre e ingredientes son obligatorios");
+    if (!nombre.trim()) {
+      toast.error("El nombre es obligatorio");
+      return;
+    }
+
+    const validIngredientes = ingredientes.filter(i => i.producto_id && i.bodega_id && Number(i.cantidad) > 0);
+    if (validIngredientes.length === 0) {
+      toast.error("Agrega al menos un ingrediente");
       return;
     }
 
     setSaving(true);
     try {
       const payload = {
-        nombre,
+        nombre: nombre.trim(),
         precio: Number(precio) || 0,
-        ingredientes: ingredientes.filter(i => i.producto_id !== "")
+        categoria_receta_id: categoriaRecetaId || null,
+        iva_incluido: ivaIncluido,
+        iva_porcentaje: Number(ivaPorcentaje),
+        imagen_url: imagenUrl,
+        ingredientes: validIngredientes.map(i => ({
+          producto_id: i.producto_id,
+          bodega_id: i.bodega_id,
+          cantidad: Number(i.cantidad),
+        })),
       };
 
       if (editingReceta) {
@@ -90,8 +145,8 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
 
       onSuccess();
       onOpenChange(false);
-    } catch (error) {
-      toast.error("Error al guardar la receta");
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || "Error al guardar la receta");
     } finally {
       setSaving(false);
     }
@@ -103,85 +158,122 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CookingPot className="h-5 w-5 text-indigo-500" />
-            {editingReceta ? "Editar Receta" : "Crear Nueva Receta"}
+            {editingReceta ? "Editar Receta" : "Nueva Receta"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4 py-2">
+          <ImageUpload currentUrl={imagenUrl} onUploaded={setImagenUrl} folder="recipes" />
+
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Nombre de la Receta / Plato</Label>
+              <Label>Nombre *</Label>
               <Input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Hamburguesa Especial" />
             </div>
             <div className="space-y-2">
-              <Label>Precio de Venta (Opcional)</Label>
-              <Input type="number" value={precio} onChange={e => setPrecio(e.target.value)} placeholder="0" />
+              <Label>Precio de venta ($)</Label>
+              <Input type="number" min="0" step="any" value={precio} onChange={e => setPrecio(e.target.value)} onFocus={e => e.target.select()} />
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-bold uppercase text-muted-foreground">Ingredientes e Insumos</Label>
-              <Button type="button" variant="outline" size="sm" onClick={addIngrediente} className="h-8 gap-1">
-                <Plus className="h-3 w-3" /> Añadir
-              </Button>
+          <div className="flex items-center gap-3 border rounded-md p-3">
+            <Checkbox id="receta-iva" checked={ivaIncluido} onCheckedChange={c => setIvaIncluido(!!c)} />
+            <label htmlFor="receta-iva" className="text-sm cursor-pointer flex-1">¿Precio incluye IVA?</label>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">IVA:</span>
+              <Input type="number" min="0" max="100" value={ivaPorcentaje} onChange={e => setIvaPorcentaje(e.target.value)} className="h-7 w-16 text-right text-xs" />
+              <span className="text-xs">%</span>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              {ingredientes.map((ing, index) => (
-                <div key={index} className="flex gap-2 items-end bg-muted/30 p-3 rounded-lg border">
-                  <div className="flex-1 space-y-1">
-                    <Label className="text-[10px]">Producto</Label>
-                    <Select value={ing.producto_id} onValueChange={(v) => updateIngrediente(index, "producto_id", v)}>
-                      <SelectTrigger className="h-8"><SelectValue placeholder="Insumo..." /></SelectTrigger>
-                      <SelectContent>
-                        {productos.map(p => <SelectItem key={p.id} value={p.id}>{p.nombre}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+          <div className="space-y-3">
+            <Label>Ingredientes por Bodega</Label>
+            {bodegas.map(bodega => {
+              const searchKey = bodega.id;
+              const searchVal = searchPerBodega[searchKey] || "";
+              const isFocused = searchFocus === searchKey;
+              const prodsInBodega = getProductsForBodega(bodega.id);
 
-                  <div className="w-20 space-y-1">
-                    <Label className="text-[10px]">Cantidad</Label>
-                    <Input 
-                      type="number" 
-                      className="h-8" 
-                      value={ing.cantidad} 
-                      onChange={e => updateIngrediente(index, "cantidad", Number(e.target.value))} 
+              return (
+                <div key={bodega.id} className="space-y-2">
+                  <BodegaBadge nombre={bodega.nombre} />
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar producto..."
+                      value={searchVal}
+                      onChange={e => setSearchPerBodega(prev => ({ ...prev, [searchKey]: e.target.value }))}
+                      onFocus={() => setSearchFocus(searchKey)}
+                      onBlur={() => setTimeout(() => setSearchFocus(null), 200)}
+                      className="pl-8 h-8 text-sm"
                     />
+                    {isFocused && prodsInBodega.length > 0 && (
+                      <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-md border bg-popover shadow-md">
+                        {prodsInBodega.slice(0, 10).map(p => (
+                          <button
+                            key={p.id}
+                            className="w-full px-3 py-1.5 text-sm text-left hover:bg-accent"
+                            onMouseDown={() => addIngrediente(bodega.id, p.id)}
+                          >
+                            {p.nombre} <span className="text-muted-foreground">({p.unidad})</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-
-                  <div className="w-32 space-y-1">
-                    <Label className="text-[10px]">Bodega Descuento</Label>
-                    <Select value={ing.bodega_id} onValueChange={(v) => updateIngrediente(index, "bodega_id", v)}>
-                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {bodegas.map(b => <SelectItem key={b.id} value={b.id}>{b.nombre}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button variant="ghost" size="icon" onClick={() => removeIngrediente(index)} className="h-8 w-8 text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {ingredientes.filter(i => i.bodega_id === bodega.id).map((ing, idx) => {
+                    const globalIdx = ingredientes.findIndex(i => i.producto_id === ing.producto_id && i.bodega_id === ing.bodega_id);
+                    const prod = productos.find(p => p.id === ing.producto_id);
+                    return (
+                      <div key={idx} className="flex items-center gap-2 pl-2">
+                        <span className="text-sm flex-1 truncate">{prod?.nombre ?? "?"}</span>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="any"
+                          value={ing.cantidad}
+                          onChange={e => updateIngrediente(globalIdx, "cantidad", e.target.value)}
+                          className="h-8 w-20 text-right text-sm"
+                          placeholder="Cant."
+                        />
+                        <span className="text-xs text-muted-foreground w-10">{prod?.unidad ?? ""}</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeIngrediente(globalIdx)}>
+                          <Trash2 className="h-3 w-3 text-destructive" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          {/* Resumen de Costos */}
-          <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-xl flex justify-between items-center">
-            <div className="flex items-center gap-2 text-indigo-700">
-              <Info className="h-4 w-4" />
-              <span className="text-sm font-medium">Costo de producción:</span>
+          {ingredientes.length > 0 && (
+            <div className="text-xs text-muted-foreground border-t pt-2">
+              Costo estimado: {formatMoney(costoEstimado)}
             </div>
-            <span className="text-xl font-bold text-indigo-900">{formatMoney(costoEstimado)}</span>
-          </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          {editingReceta && (
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={async () => {
+                if (!confirm("¿Eliminar esta receta?")) return;
+                await api.delete(`/operations/recipes/${editingReceta.id}`);
+                toast.success("Receta eliminada");
+                onSuccess();
+                onOpenChange(false);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
           <Button onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
-            {saving ? "Guardando..." : editingReceta ? "Actualizar Receta" : "Crear Receta"}
+            {saving ? "Guardando..." : editingReceta ? "Guardar cambios" : "Crear receta"}
           </Button>
         </DialogFooter>
       </DialogContent>

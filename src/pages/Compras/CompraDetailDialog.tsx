@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../componen
 import { format } from "date-fns";
 import { formatMoney } from "../../lib/format";
 import { Compra, CompraItem } from "./types";
-import { Loader2, FileText, Calendar, User, Store } from "lucide-react";
+import { Loader2, FileText, Calendar, Store, Truck } from "lucide-react";
 
 interface CompraDetailDialogProps {
   compra: Compra | null;
@@ -31,15 +31,14 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
     if (!compra) return;
     setLoading(true);
     try {
-      // Cargamos los items de la compra y los productos para tener los nombres
       const [itemsRes, prodRes] = await Promise.all([
-        api.get(`/inventory/compras/${compra.id}/items`),
+        api.get(`/purchases/${compra.id}`),
         api.get("/inventory/products")
       ]);
-      setItems(itemsRes.data);
+      setItems(itemsRes.data.items || []);
       setProductos(prodRes.data);
     } catch (error) {
-      toast.error("Error al cargar el detalle de la compra");
+      toast.error("Error al cargar el detalle");
       onClose();
     } finally {
       setLoading(false);
@@ -48,6 +47,11 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
 
   const getProductName = (id: string) => {
     return productos.find(p => p.id === id)?.nombre || "Producto no encontrado";
+  };
+
+  const getBodegaName = (id: string | null) => {
+    if (!id) return "—";
+    return "Bodega"; // Simplified for now
   };
 
   return (
@@ -62,11 +66,11 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
         {loading ? (
           <div className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground mt-2">Cargando productos...</p>
+            <p className="text-sm text-muted-foreground mt-2">Cargando...</p>
           </div>
         ) : compra && (
           <div className="space-y-6">
-            {/* Cabecera con Info General */}
+            {/* Header Info */}
             <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg text-sm">
               <div className="space-y-1">
                 <p className="flex items-center gap-2 text-muted-foreground">
@@ -80,8 +84,10 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
               </div>
               <div className="space-y-1">
                 <p className="flex items-center gap-2 text-muted-foreground">
-                  <User className="h-3.5 w-3.5" /> Registrado por: 
-                  <span className="text-foreground font-medium">{compra.usuario_id.split("-")[0]}...</span>
+                  <Truck className="h-3.5 w-3.5" /> Pedido: 
+                  <span className={compra.pedido_realizado ? "text-purple-600 font-medium" : "text-muted-foreground"}>
+                    {compra.pedido_realizado ? "Realizado" : "Pendiente"}
+                  </span>
                 </p>
                 {compra.factura_url && (
                   <p className="flex items-center gap-2 text-muted-foreground">
@@ -92,12 +98,13 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
               </div>
             </div>
 
-            {/* Tabla de Items */}
+            {/* Items Table */}
             <div className="border rounded-md overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-muted text-muted-foreground font-medium">
                   <tr>
                     <th className="px-4 py-2 text-left">Producto</th>
+                    <th className="px-4 py-2 text-left">Bodega</th>
                     <th className="px-4 py-2 text-right">Cant.</th>
                     <th className="px-4 py-2 text-right">Precio Unit.</th>
                     <th className="px-4 py-2 text-right">Subtotal</th>
@@ -107,6 +114,7 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
                   {items.map((it) => (
                     <tr key={it.id}>
                       <td className="px-4 py-2 font-medium">{getProductName(it.producto_id)}</td>
+                      <td className="px-4 py-2">{getBodegaName(it.bodega_id)}</td>
                       <td className="px-4 py-2 text-right">{it.cantidad}</td>
                       <td className="px-4 py-2 text-right">{formatMoney(it.precio_unitario)}</td>
                       <td className="px-4 py-2 text-right font-semibold">
@@ -117,7 +125,7 @@ export function CompraDetailDialog({ compra, onClose }: CompraDetailDialogProps)
                 </tbody>
                 <tfoot className="bg-secondary/50 font-bold">
                   <tr>
-                    <td colSpan={3} className="px-4 py-2 text-right">Total</td>
+                    <td colSpan={4} className="px-4 py-2 text-right">Total</td>
                     <td className="px-4 py-2 text-right text-primary">
                       {formatMoney(compra.total)}
                     </td>

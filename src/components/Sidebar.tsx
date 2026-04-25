@@ -19,7 +19,7 @@ const menuItems = [
   { path: "/analiticas", label: "Novedades", icon: Bell },
   { path: "/proyeccion", label: "Proyección", icon: TrendingUp },
   { path: "/eventos", label: "Eventos", icon: CalendarDays },
-  { path: "/gestion", label: "Gestión", icon: Boxes, adminOnly: true },
+  { path: "/gestion", label: "Gestión", icon: Boxes },
   { path: "/gestionar-merma", label: "Mermas", icon: AlertTriangle },
   { path: "/historial", label: "Historial", icon: History },
   { path: "/informes", label: "Informes", icon: BarChart3 },
@@ -42,7 +42,7 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
     if (onClose) onClose();
   }, [location.pathname]);
 
-  const visibleItems = menuItems.filter(item => !item.adminOnly || isAdmin);
+  const visibleItems = menuItems;
 
   const sidebarContent = (
     <>

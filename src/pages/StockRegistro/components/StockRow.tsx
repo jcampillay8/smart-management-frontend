@@ -36,10 +36,10 @@ export function StockRow({
   if (!entry) return null;
 
   return (
-    <div className="flex flex-col w-full border-b border-white/5">
+    <div className="flex flex-col w-full border-b border-input">
       <div className={cn(
         TABLE_GRID_LAYOUT, 
-        "py-4 transition-colors hover:bg-white/[0.02] w-full",
+        "py-4 transition-colors hover:bg-muted/10 w-full",
         isHighlighted && "bg-primary/5"
       )}>
         {/* COL 1: PRODUCTO */}
@@ -60,7 +60,7 @@ export function StockRow({
         <div className="flex items-center gap-2">
            <Input 
              disabled={!canEdit || entry.multiExpiry}
-             className="w-20 h-9 bg-black/40 border-white/10 text-center font-mono text-sm"
+             className="w-20 h-9 bg-card border-input text-center font-mono text-sm"
              value={entry.multiExpiry ? "" : entry.cantidad}
              placeholder={entry.multiExpiry ? "---" : "0"}
              onChange={(e) => onUpdate(product._entryKey, "cantidad", e.target.value)}
@@ -78,7 +78,7 @@ export function StockRow({
           <Input 
             type="date"
             disabled={!canEdit}
-            className="h-9 bg-black/40 border-white/10 text-[11px] w-full px-2"
+            className="h-9 bg-card border-input text-[11px] w-full px-2"
             value={entry.fecha_recuento}
             onChange={(e) => onUpdate(product._entryKey, "fecha_recuento", e.target.value)}
           />
@@ -88,21 +88,14 @@ export function StockRow({
         <div className="relative">
           <Input 
             type="date"
-            disabled={!canEdit || entry.multiExpiry}
+            disabled={!canEdit}
             className={cn(
-              "h-9 bg-black/40 border-white/10 text-[11px] w-full px-2",
+              "h-9 bg-card border-input text-[11px] w-full px-2",
               entry.multiExpiry && "opacity-0 pointer-events-none"
             )}
             value={entry.fecha_vencimiento}
             onChange={(e) => onUpdate(product._entryKey, "fecha_vencimiento", e.target.value)}
           />
-          {entry.multiExpiry && (
-            <div className="absolute inset-0 flex items-center px-1">
-               <span className="text-[9px] font-black uppercase text-primary tracking-tighter bg-primary/5 px-2 py-1 rounded-md border border-primary/10">
-                Lotes Múltiples
-               </span>
-            </div>
-          )}
         </div>
 
         {/* COL 6: CHECKBOX */}
@@ -111,14 +104,14 @@ export function StockRow({
             disabled={!canEdit}
             checked={entry.multiExpiry}
             onCheckedChange={(val) => toggleMultiExpiry(product._entryKey, !!val)}
-            className="border-white/20 data-[state=checked]:bg-primary"
+            className="border-input data-[state=checked]:bg-primary"
           />
         </div>
       </div>
 
       {/* PANEL MULTI-LOTE */}
       {entry.multiExpiry && (
-        <div className="bg-primary/[0.02] border-t border-white/5 p-6 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
+        <div className="bg-secondary/30 border-t border-input p-6 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
           <div className="flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/70">Desglose de Lotes</span>
             <Button 
@@ -139,7 +132,7 @@ export function StockRow({
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                     <Input 
                       type="date"
-                      className="h-8 bg-black/40 border-white/5 pl-8 text-[11px]"
+                      className="h-8 bg-card border-input pl-8 text-[11px]"
                       value={ee.fecha_vencimiento}
                       onChange={(e) => updateExpiryEntry(product._entryKey, idx, "fecha_vencimiento", e.target.value)}
                     />
@@ -147,7 +140,7 @@ export function StockRow({
                   <div className="relative">
                     <Input 
                       placeholder="Cant."
-                      className="h-8 bg-black/40 border-white/5 text-right pr-8 font-mono text-[11px]"
+                      className="h-8 bg-card border-input text-right pr-8 font-mono text-[11px]"
                       value={ee.cantidad}
                       onChange={(e) => updateExpiryEntry(product._entryKey, idx, "cantidad", e.target.value)}
                     />
