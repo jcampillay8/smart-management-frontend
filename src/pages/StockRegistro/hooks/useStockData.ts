@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../../../lib/api";
 import { toast } from "sonner";
-import { buildInventorySnapshot, InventorySnapshot } from "../../../lib/inventory";
 import { StockEntry, Producto, Categoria } from "../types";
 
 interface Bodega {
@@ -21,70 +20,87 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
   const [initialEntries, setInitialEntries] = useState<string>("");
   const [productBodegaMap, setProductBodegaMap] = useState<Record<string, Set<string>>>({});
   
-  const [snapshot, setSnapshot] = useState<InventorySnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<any>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [catRes, prodRes, recordsRes, bodRes] = await Promise.all([
+      const [catRes, prodRes, statusRes, bodRes, pbRes] = await Promise.all([
         api.get("/inventory/categories"),
         api.get("/inventory/products"),
-        api.get("/inventory/history/"),
+        api.get(`/inventory/stock/status?bodega_id=${selectedBodegaId}`),
         api.get("/inventory/bodegas"),
+        api.get("/inventory/product-setup"),
       ]);
 
       setCategorias(catRes.data);
       setProductos(prodRes.data);
       setBodegas(bodRes.data);
       
+      // Construir mapa de productos por bodega desde product-setup
       const pbMap: Record<string, Set<string>> = {};
       prodRes.data.forEach((p: any) => {
         pbMap[p.id] = new Set(p.bodegas_config?.map((bc: any) => bc.bodega_id) || []);
       });
       setProductBodegaMap(pbMap);
 
-      const allRecords = recordsRes.data;
+      // El backend ya calcula el snapshot con Polars
+      const backendSnapshot = statusRes.data || [];
       const loadedBodegas = bodRes.data;
       const init: Record<string, StockEntry> = {};
 
-      const currentSnapshot = buildInventorySnapshot(allRecords, new Date().toISOString(), selectedBodegaId);
-      setSnapshot(currentSnapshot);
-
+      // Convertir snapshot del backend al formato que espera la UI
       if (selectedBodegaId === "all") {
         loadedBodegas.forEach((bodega: Bodega) => {
-          const bSnapshot = buildInventorySnapshot(allRecords, new Date().toISOString(), bodega.id);
+          // Obtener productos configurados en esta bodega
+          const productosEnBodega = prodRes.data.filter((p: Producto) => {
+            const configs = p.bodegas_config || [];
+            return configs.some((bc: any) => bc.bodega_id === bodega.id);
+          });
           
-          prodRes.data.forEach((p: Producto) => {
-            const lots = (bSnapshot.lotsByProduct[p.id] ?? []).filter(l => l.cantidad > 0);
-            if (lots.length === 0) return;
-
+          productosEnBodega.forEach((p: Producto) => {
+            // Obtener lotes del snapshot para este producto en esta bodega
+            const bSnapshot = backendSnapshot.filter((s: any) => 
+              s.bodega_id === bodega.id && s.producto_id === p.id
+            );
+            const lots = bSnapshot.filter((s: any) => s.stock_actual > 0);
+            
             const key = `${p.id}::${bodega.id}`;
             init[key] = {
-              cantidad: lots.length === 1 ? String(lots[0].cantidad) : "",
+              cantidad: lots.length === 1 ? String(lots[0].stock_actual) : "0",
               fecha_recuento: today,
-              fecha_vencimiento: lots.length === 1 ? lots[0].fecha_vencimiento : "",
+              fecha_vencimiento: lots.length === 1 ? (lots[0].fecha_vencimiento || "") : "",
               multiExpiry: lots.length > 1,
-              expiryEntries: lots.map(l => ({ 
-                fecha_vencimiento: l.fecha_vencimiento, 
-                cantidad: String(l.cantidad) 
-              })),
+              expiryEntries: lots.length > 0 ? lots.map(l => ({ 
+                fecha_vencimiento: l.fecha_vencimiento || "", 
+                cantidad: String(l.stock_actual) 
+              })) : [],
             };
           });
         });
       } else {
-        prodRes.data.forEach((p: Producto) => {
-          const lots = (currentSnapshot.lotsByProduct[p.id] ?? []).filter(l => l.cantidad > 0);
+        // Obtener productos configurados en la bodega seleccionada
+        const productosEnBodega = prodRes.data.filter((p: Producto) => {
+          const configs = p.bodegas_config || [];
+          return configs.some((bc: any) => bc.bodega_id === selectedBodegaId);
+        });
+        
+        productosEnBodega.forEach((p: Producto) => {
+          const lots = backendSnapshot.filter((s: any) => 
+            s.bodega_id === selectedBodegaId && s.producto_id === p.id && s.stock_actual > 0
+          );
+          
           init[p.id] = {
-            cantidad: lots.length === 1 ? String(lots[0].cantidad) : "",
+            cantidad: lots.length === 1 ? String(lots[0].stock_actual) : "0",
             fecha_recuento: today,
-            fecha_vencimiento: lots.length === 1 ? lots[0].fecha_vencimiento : "",
+            fecha_vencimiento: lots.length === 1 ? (lots[0].fecha_vencimiento || "") : "",
             multiExpiry: lots.length > 1,
-            expiryEntries: lots.map(l => ({ 
-              fecha_vencimiento: l.fecha_vencimiento, 
-              cantidad: String(l.cantidad) 
-            })),
+            expiryEntries: lots.length > 0 ? lots.map(l => ({ 
+              fecha_vencimiento: l.fecha_vencimiento || "", 
+              cantidad: String(l.stock_actual) 
+            })) : [],
           };
         });
       }
