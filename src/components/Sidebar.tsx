@@ -6,7 +6,7 @@ import {
   UtensilsCrossed, TrendingUp, History, 
   CalendarDays, ChevronLeft, ChevronRight, 
   Bell, BarChart3, AlertTriangle,
-  ShoppingCart, ClipboardCheck, X
+  ShoppingCart, ClipboardCheck, X, Truck
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -15,6 +15,7 @@ const menuItems = [
   { path: "/", label: "Inventario", icon: ClipboardList },
   { path: "/consumo", label: "Consumo", icon: UtensilsCrossed },
   { path: "/compras", label: "Compras", icon: ShoppingCart },
+  { path: "/proveedores", label: "Proveedores", icon: Truck },
   { path: "/contar-inventario", label: "Conteos", icon: ClipboardCheck },
   { path: "/analiticas", label: "Novedades", icon: Bell },
   { path: "/proyeccion", label: "Proyección", icon: TrendingUp },

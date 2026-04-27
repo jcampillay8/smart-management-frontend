@@ -20,6 +20,7 @@ import Eventos from "./pages/Eventos/index";
 import Configuracion from "./pages/Configuracion/index";
 import Compras from "./pages/Compras/index";
 import ContarInventario from "./pages/ContarInventario/index";
+import Proveedores from "./pages/Proveedores/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -58,6 +59,7 @@ function App() {
                     <Route path="/eventos" element={<Eventos />} />
                     <Route path="/configuracion" element={<Configuracion />} />
                     <Route path="/compras" element={<Compras />} />
+                    <Route path="/proveedores" element={<Proveedores />} />
                     <Route path="/contar-inventario" element={<ContarInventario />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />

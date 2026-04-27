@@ -10,7 +10,10 @@ import { cn } from "../../lib/utils"; // <--- AGREGAR ESTA LÍNEA
 
 export default function AnaliticasPage() {
   const { selectedBodegaId } = useBodega();
-  const { stockCritico, loading, refresh } = useAnaliticas(selectedBodegaId);
+  const { stockCritico, loading, refresh, notifications, data } = useAnaliticas(selectedBodegaId);
+
+  const vencimientosProximos = data.filter(p => p.cantidad > 0 && p.fecha_vencimiento);
+  const vencidos = data.filter(p => p.cantidad_vencida > 0);
 
   return (
     <div className="space-y-8 pb-10">
@@ -34,13 +37,13 @@ export default function AnaliticasPage() {
         <div className="lg:col-span-2 space-y-8">
           <StockCriticoTable data={stockCritico} />
           <div className="grid md:grid-cols-2 gap-6">
-            <VencimientosCard type="upcoming" data={[]} />
-            <VencimientosCard type="expired" data={[]} />
+            <VencimientosCard type="upcoming" data={vencimientosProximos} />
+            <VencimientosCard type="expired" data={vencidos} />
           </div>
         </div>
         
         <aside>
-          <NotificacionesPanel notifications={[]} />
+          <NotificacionesPanel notifications={notifications} />
         </aside>
       </div>
     </div>

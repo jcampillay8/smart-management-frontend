@@ -1,7 +1,10 @@
-import { Bell, Search, User, LogOut, Moon, Sun, Settings, Menu } from "lucide-react";
+import { Bell, Search, User, LogOut, Moon, Sun, Settings, Menu, AlertTriangle, Info, OctagonAlert, ChevronRight } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
+import { useGlobalNotifications } from "../hooks/useNotifications";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { cn } from "../lib/utils";
 
 export default function Navbar({ 
   restaurantName, 
@@ -12,6 +15,8 @@ export default function Navbar({
 }) {
   const { user, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { notifications, totalCount, hasCritical } = useGlobalNotifications();
+  const navigate = useNavigate();
 
   return (
     <header className="h-20 glass border-b border-border sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between">
@@ -34,11 +39,57 @@ export default function Navbar({
       </div>
 
       <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <button className="h-10 w-10 rounded-xl hover:bg-secondary flex items-center justify-center relative transition-colors">
-            <Bell size={20} className="text-muted-foreground" />
-            <span className="absolute top-2 right-2 h-2 w-2 bg-destructive rounded-full border-2 border-background" />
-          </button>
+        <div className="flex items-center gap-2 relative">
+          <div className="group relative">
+            <button className="h-10 w-10 rounded-xl hover:bg-secondary flex items-center justify-center relative transition-colors">
+              <Bell size={20} className={cn("text-muted-foreground", hasCritical && "text-destructive")} />
+              {totalCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1 border-2 border-background">
+                  {totalCount > 9 ? "9+" : totalCount}
+                </span>
+              )}
+            </button>
+            
+            <div className="absolute right-0 mt-2 w-80 glass rounded-2xl p-2 shadow-2xl border border-border opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-200 z-50">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border mb-2">
+                <span className="text-sm font-bold">Notificaciones</span>
+                {totalCount > 0 && (
+                  <span className="text-xs bg-secondary px-2 py-0.5 rounded-full">{totalCount} nuevas</span>
+                )}
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    Sin notificaciones nuevas
+                  </div>
+                ) : (
+                  notifications.slice(0, 5).map((n) => {
+                    const Icon = n.type === "critical" ? OctagonAlert : n.type === "warning" ? AlertTriangle : Info;
+                    return (
+                      <button 
+                        key={n.key}
+                        onClick={() => navigate("/analiticas")}
+                        className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                      >
+                        <Icon className={cn("h-4 w-4 mt-0.5", n.type === "critical" ? "text-destructive" : "text-amber-500")} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{n.title}</p>
+                          <p className="text-xs text-muted-foreground truncate">{n.details.length} ítems</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+              <button 
+                onClick={() => navigate("/analiticas")}
+                className="w-full text-center text-xs text-primary font-medium py-2 border-t border-border mt-2 hover:bg-secondary rounded-lg"
+              >
+                Ver todas las notificaciones
+              </button>
+            </div>
+          </div>
           <button 
             onClick={toggleTheme}
             className="h-10 w-10 rounded-xl hover:bg-secondary flex items-center justify-center transition-colors"
