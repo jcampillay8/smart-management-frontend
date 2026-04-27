@@ -24,7 +24,6 @@ const menuItems = [
   { path: "/gestionar-merma", label: "Mermas", icon: AlertTriangle },
   { path: "/historial", label: "Historial", icon: History },
   { path: "/informes", label: "Informes", icon: BarChart3 },
-  { path: "/configuracion", label: "Configuración", icon: Settings, adminOnly: true },
 ];
 
 interface SidebarProps {
