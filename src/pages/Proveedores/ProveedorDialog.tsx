@@ -76,7 +76,7 @@ export function ProveedorDialog({ open, onOpenChange, editingProveedor, onSave, 
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <div className="space-y-1">
-            <Label>Nombre de la empresa *</Label>
+            <Label>Nombre empresa *</Label>
             <Input
               value={nombreEmpresa}
               onChange={(e) => setNombreEmpresa(e.target.value)}

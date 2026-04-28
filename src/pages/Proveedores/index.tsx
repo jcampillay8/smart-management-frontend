@@ -42,7 +42,7 @@ export default function ProveedoresPage() {
         </h1>
         {isAdmin && (
           <Button onClick={() => openDialog()} className="gap-2">
-            <Plus className="h-4 w-4" /> Agregar proveedor
+            <Plus className="h-4 w-4" /> Nuevo proveedor
           </Button>
         )}
       </div>
