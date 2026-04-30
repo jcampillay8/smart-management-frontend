@@ -127,9 +127,9 @@ export default function GestionPage() {
           <Settings2 className="h-5 w-5 text-indigo-600" />
           Gestión de Catálogo
         </h1>
-        <Button onClick={() => navigate("/informes")} size="sm" variant="outline">
+        <Button onClick={() => navigate("/informes")} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
           <BarChart3 className="h-4 w-4 mr-2" />
-          Informes
+          Analíticas e Informes
         </Button>
       </div>
 
