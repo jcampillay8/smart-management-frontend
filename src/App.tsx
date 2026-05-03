@@ -21,6 +21,11 @@ import Configuracion from "./pages/Configuracion/index";
 import Compras from "./pages/Compras/index";
 import ContarInventario from "./pages/ContarInventario/index";
 import Proveedores from "./pages/Proveedores/index";
+import ExecutiveOverview from "./pages/Reportes/ExecutiveOverview/index";
+import LossControl from "./pages/Reportes/LossControl/index";
+import OperationalEfficiency from "./pages/Reportes/OperationalEfficiency/index";
+import FinancialVision from "./pages/Reportes/FinancialVision/index";
+import ResumenGeneral from "./pages/Reportes/ResumenGeneral/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -61,6 +66,11 @@ function App() {
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/proveedores" element={<Proveedores />} />
                     <Route path="/contar-inventario" element={<ContarInventario />} />
+                    <Route path="/reportes/resumen-general" element={<ResumenGeneral />} />
+                    <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
+                    <Route path="/reportes/control-perdidas" element={<LossControl />} />
+                    <Route path="/reportes/eficiencia-operacional" element={<OperationalEfficiency />} />
+                    <Route path="/reportes/vision-financiera" element={<FinancialVision />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>

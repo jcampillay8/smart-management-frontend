@@ -6,7 +6,8 @@ import {
   UtensilsCrossed, TrendingUp, History, 
   CalendarDays, ChevronLeft, ChevronRight, 
   Bell, BarChart3, AlertTriangle,
-  ShoppingCart, ClipboardCheck, X, Truck
+  ShoppingCart, ClipboardCheck, X, Truck,
+  LayoutDashboard, ChevronDown
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -34,6 +35,7 @@ interface SidebarProps {
 
 export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isPanelEjecutivoOpen, setIsPanelEjecutivoOpen] = useState(false);
   const location = useLocation();
   const { isAdmin } = useAuth();
 
@@ -43,6 +45,14 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
   }, [location.pathname]);
 
   const visibleItems = menuItems;
+
+  const panelEjecutivoItems = [
+    { path: "/reportes/resumen-general", label: "Resumen General", isMain: true },
+    { path: "/reportes/resumen-ejecutivo", label: "Resumen Ejecutivo" },
+    { path: "/reportes/control-perdidas", label: "Control de Pérdidas" },
+    { path: "/reportes/eficiencia-operacional", label: "Eficiencia Operacional" },
+    { path: "/reportes/vision-financiera", label: "Visión Financiera" },
+  ];
 
   const sidebarContent = (
     <>
@@ -107,7 +117,7 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
                 "shrink-0",
                 isActive ? "text-primary-foreground" : "group-hover:text-primary transition-colors"
               )} />
-              
+               
               {(!isCollapsed || isOpen) && (
                 <motion.span
                   initial={{ opacity: 0 }}
@@ -127,6 +137,82 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
             </Link>
           );
         })}
+
+        {/* Panel Ejecutivo */}
+        <div className="pt-2">
+          <div className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+            panelEjecutivoItems.some(item => location.pathname === item.path)
+              ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+              : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+          )}>
+            <Link to="/reportes/resumen-general" className="flex items-center gap-3 flex-1">
+              <LayoutDashboard size={20} className={cn(
+                "shrink-0",
+                panelEjecutivoItems.some(item => location.pathname === item.path)
+                  ? "text-primary-foreground"
+                  : "group-hover:text-primary transition-colors"
+              )} />
+              
+              {(!isCollapsed || isOpen) && (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="font-medium text-sm whitespace-nowrap flex-1 text-left"
+                >
+                  Panel Ejecutivo
+                </motion.span>
+              )}
+            </Link>
+            
+            {(!isCollapsed || isOpen) && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsPanelEjecutivoOpen(!isPanelEjecutivoOpen);
+                }}
+                className="hover:bg-secondary/50 rounded p-1"
+              >
+                <ChevronDown 
+                  size={16} 
+                  className={cn(
+                    "transition-transform duration-200",
+                    isPanelEjecutivoOpen && "rotate-180"
+                  )} 
+                />
+              </button>
+            )}
+          </div>
+
+          {/* Submenu */}
+          {(!isCollapsed || isOpen) && isPanelEjecutivoOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-2"
+            >
+              {panelEjecutivoItems.map((item) => {
+                if (item.isMain) return null; // Skip "Resumen General" as it's accessed via the main button
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={cn(
+                      "block px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                      isActive
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </motion.div>
+          )}
+        </div>
       </nav>
 
       <div className="p-4 border-t border-border mt-auto bg-background/50">
