@@ -1,6 +1,6 @@
 // src/pages/Informes/index.tsx
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   BarChart3, TrendingUp, TrendingDown, AlertTriangle, Lightbulb, Package, DollarSign,
   Trash2, Activity, Calendar as CalendarIcon, Download, Share2, ArrowLeft, Info, RotateCw,
@@ -168,44 +168,70 @@ export default function InformesPage() {
   }
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="container mx-auto pb-32 space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/gestion")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <BarChart3 className="h-5 w-5 text-purple-500" />
-            Analiticas e Informes
-          </h1>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tighter">Resumen General</h1>
+          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+            Analíticas e informes del inventario
+          </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-muted-foreground">Bodegas</span>
-            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-background max-w-sm">
-              <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="bodega-all" 
-                  checked={selectedBodegas.includes("all")}
-                  onCheckedChange={(checked) => handleBodegaChange("all", checked as boolean)}
-                />
-                <Label htmlFor="bodega-all" className="text-sm">Todas</Label>
-              </div>
-              {bodegas.map(b => (
-                <div key={b.id} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`bodega-${b.id}`}
-                    checked={selectedBodegas.includes(b.id) || selectedBodegas.includes("all")}
-                    onCheckedChange={(checked) => handleBodegaChange(b.id, checked as boolean)}
-                    disabled={selectedBodegas.includes("all") && b.id !== "all"}
-                  />
-                  <Label htmlFor={`bodega-${b.id}`} className="text-sm">{b.nombre}</Label>
-                </div>
-              ))}
-            </div>
-          </div>
+        <div className="flex items-center gap-4 flex-wrap">
+          <Button variant="outline" size="sm" onClick={loadData} className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <RotateCw className="h-4 w-4 mr-2" />
+            Actualizar
+          </Button>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <Link to="/reportes/panel-ejecutivo">Panel Ejecutivo</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <Link to="/reportes/panel-ejecutivo">Panel Ejecutivo</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <Link to="/reportes/control-perdidas">Control de Pérdidas</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <Link to="/reportes/eficiencia-operacional">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Eficiencia Operacional
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <Link to="/reportes/vision-financiera">Visión Financiera</Link>
+          </Button>
+        </div>
+      </header>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 px-2">
+        <div className="flex flex-col gap-1.5 flex-1">
+          <span className="text-xs font-medium text-muted-foreground">Bodegas</span>
+          <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-background">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="bodega-all" 
+                checked={selectedBodegas.includes("all")}
+                onCheckedChange={(checked) => handleBodegaChange("all", checked as boolean)}
+              />
+              <Label htmlFor="bodega-all" className="text-sm">Todas</Label>
+            </div>
+            {bodegas.map(b => (
+              <div key={b.id} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`bodega-${b.id}`}
+                  checked={selectedBodegas.includes(b.id) || selectedBodegas.includes("all")}
+                  onCheckedChange={(checked) => handleBodegaChange(b.id, checked as boolean)}
+                  disabled={selectedBodegas.includes("all") && b.id !== "all"}
+                />
+                <Label htmlFor={`bodega-${b.id}`} className="text-sm">{b.nombre}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs font-medium text-muted-foreground">Periodo</span>
           <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -214,36 +240,38 @@ export default function InformesPage() {
               <SelectItem value="custom">Personalizado</SelectItem>
             </SelectContent>
           </Select>
-          {period === "custom" && (
-            <div className="flex flex-col gap-1.5 w-full sm:w-auto">
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5">
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      {format(customStart, "dd/MM/yy")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={customStart} onSelect={d => d && setCustomStart(d)} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-                <span className="text-xs text-muted-foreground">a</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5">
-                      <CalendarIcon className="h-3.5 w-3.5" />
-                      {format(customEnd, "dd/MM/yy")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={customEnd} onSelect={d => d && setCustomEnd(d)} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-          )}
         </div>
+
+        {period === "custom" && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-muted-foreground">Fechas</span>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {format(customStart, "dd/MM/yy")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customStart} onSelect={d => d && setCustomStart(d)} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+              <span className="text-xs text-muted-foreground">a</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <CalendarIcon className="h-3.5 w-3.5" />
+                    {format(customEnd, "dd/MM/yy")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={customEnd} onSelect={d => d && setCustomEnd(d)} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* BLOCK 1: KPIs */}

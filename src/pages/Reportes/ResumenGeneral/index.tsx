@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
-import { LayoutDashboard } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
-export default function ResumenGeneral() {
+export default function PanelEjecutivo() {
   return (
     <div className="container mx-auto pb-32 space-y-8">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
@@ -12,10 +12,15 @@ export default function ResumenGeneral() {
             Resumen General de indicadores clave
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
+            <Link to="/reportes/resumen-general">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Resumen General
+            </Link>
+          </Button>
           <Button variant="outline" size="sm" asChild className="rounded-xl border-white/10 text-[10px] font-black uppercase">
             <Link to="/reportes/resumen-ejecutivo">
-              <LayoutDashboard className="h-4 w-4 mr-2" />
               Resumen Ejecutivo
             </Link>
           </Button>
@@ -38,7 +43,7 @@ export default function ResumenGeneral() {
       </header>
       
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground text-lg">Contenido del Resumen General próximamente...</p>
+        <p className="text-muted-foreground text-lg">Contenido del Panel Ejecutivo próximamente...</p>
       </div>
     </div>
   );

@@ -5,9 +5,9 @@ import {
   Package, ClipboardList, Boxes, Settings, 
   UtensilsCrossed, TrendingUp, History, 
   CalendarDays, ChevronLeft, ChevronRight, 
-  Bell, BarChart3, AlertTriangle,
+  Bell, AlertTriangle,
   ShoppingCart, ClipboardCheck, X, Truck,
-  LayoutDashboard, ChevronDown
+  LayoutDashboard, ChevronDown, BarChart3, DollarSign
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -24,7 +24,6 @@ const menuItems = [
   { path: "/gestion", label: "Gestión", icon: Boxes },
   { path: "/gestionar-merma", label: "Mermas", icon: AlertTriangle },
   { path: "/historial", label: "Historial", icon: History },
-  { path: "/informes", label: "Informes", icon: BarChart3 },
 ];
 
 interface SidebarProps {
@@ -47,11 +46,11 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
   const visibleItems = menuItems;
 
   const panelEjecutivoItems = [
-    { path: "/reportes/resumen-general", label: "Resumen General", isMain: true },
-    { path: "/reportes/resumen-ejecutivo", label: "Resumen Ejecutivo" },
-    { path: "/reportes/control-perdidas", label: "Control de Pérdidas" },
-    { path: "/reportes/eficiencia-operacional", label: "Eficiencia Operacional" },
-    { path: "/reportes/vision-financiera", label: "Visión Financiera" },
+    { path: "/reportes/resumen-general", label: "Resumen General", icon: LayoutDashboard },
+    { path: "/reportes/resumen-ejecutivo", label: "Resumen Ejecutivo", icon: BarChart3 },
+    { path: "/reportes/control-perdidas", label: "Control de Pérdidas", icon: AlertTriangle },
+    { path: "/reportes/eficiencia-operacional", label: "Eficiencia Operacional", icon: TrendingUp },
+    { path: "/reportes/vision-financiera", label: "Visión Financiera", icon: DollarSign },
   ];
 
   const sidebarContent = (
@@ -160,8 +159,8 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
                   animate={{ opacity: 1 }}
                   className="font-medium text-sm whitespace-nowrap flex-1 text-left"
                 >
-                  Panel Ejecutivo
-                </motion.span>
+                Panel Ejecutivo
+              </motion.span>
               )}
             </Link>
             
@@ -193,19 +192,19 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
               className="ml-6 mt-1 space-y-1 border-l-2 border-border pl-2"
             >
               {panelEjecutivoItems.map((item) => {
-                if (item.isMain) return null; // Skip "Resumen General" as it's accessed via the main button
                 const isActive = location.pathname === item.path;
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
                     className={cn(
-                      "block px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all duration-200",
                       isActive
                         ? "bg-primary/10 text-primary font-medium"
                         : "text-muted-foreground hover:text-foreground hover:bg-secondary"
                     )}
                   >
+                    {item.icon && <item.icon size={16} />}
                     {item.label}
                   </Link>
                 );

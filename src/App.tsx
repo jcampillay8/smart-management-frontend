@@ -25,7 +25,7 @@ import ExecutiveOverview from "./pages/Reportes/ExecutiveOverview/index";
 import LossControl from "./pages/Reportes/LossControl/index";
 import OperationalEfficiency from "./pages/Reportes/OperationalEfficiency/index";
 import FinancialVision from "./pages/Reportes/FinancialVision/index";
-import ResumenGeneral from "./pages/Reportes/ResumenGeneral/index";
+import PanelEjecutivo from "./pages/Reportes/ResumenGeneral/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -58,7 +58,7 @@ function App() {
                     <Route path="/analiticas" element={<Analiticas />} />
                     <Route path="/gestion" element={<Gestion />} />
                     <Route path="/gestionar-merma" element={<GestionarMerma />} />
-                    <Route path="/informes" element={<Informes />} />
+                    <Route path="/reportes/resumen-general" element={<Informes />} />
                     <Route path="/proyeccion" element={<Proyeccion />} />
                     <Route path="/historial" element={<Historial />} />
                     <Route path="/eventos" element={<Eventos />} />
@@ -66,7 +66,7 @@ function App() {
                     <Route path="/compras" element={<Compras />} />
                     <Route path="/proveedores" element={<Proveedores />} />
                     <Route path="/contar-inventario" element={<ContarInventario />} />
-                    <Route path="/reportes/resumen-general" element={<ResumenGeneral />} />
+                    <Route path="/reportes/panel-ejecutivo" element={<PanelEjecutivo />} />
                     <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
                     <Route path="/reportes/control-perdidas" element={<LossControl />} />
                     <Route path="/reportes/eficiencia-operacional" element={<OperationalEfficiency />} />
