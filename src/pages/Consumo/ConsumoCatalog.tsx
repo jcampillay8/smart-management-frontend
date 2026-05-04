@@ -17,6 +17,7 @@ interface CatalogProps {
   groupedProducts: { id: string; nombre: string; productos: Producto[] }[];
   onAdd: (item: any, type: "producto" | "receta") => void;
   getStock: (productoId: string) => number;
+  viewMode: "productos" | "recetas";
 }
 
 export function ConsumoCatalog({ 
@@ -27,7 +28,8 @@ export function ConsumoCatalog({
   categorias,
   groupedProducts,
   onAdd, 
-  getStock 
+  getStock,
+  viewMode
 }: CatalogProps) {
   const [filtroCategoria, setFiltroCategoria] = useState("all");
 
@@ -70,84 +72,76 @@ export function ConsumoCatalog({
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <section className="space-y-3">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground flex items-center gap-2">
-            <Package className="h-4 w-4" /> Productos
-          </h2>
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto">
-            {filteredProducts.map(cat => (
-              <div key={cat.id}>
-                <h3 className="text-[10px] font-bold uppercase text-muted-foreground mb-2 mt-4">{cat.nombre}</h3>
-                {cat.productos.map(p => {
-                  const stock = getStock(p.id);
-                  const status = getStockStatus(stock, p.stock_minimo);
-                  return (
-                    <div 
-                      key={p.id} 
-                      className={cn(
-                        "flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer",
-                        status === "empty" && "border-destructive/50 bg-destructive/10",
-                        status === "low" && "border-amber-400/50 bg-amber-500/10"
-                      )} 
-                      onClick={() => onAdd(p, "producto")}
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{p.nombre}</p>
-                        <p className="text-xs text-muted-foreground">{p.unidad}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className={cn(
-                          "text-sm font-bold",
-                          status === "empty" && "text-destructive",
-                          status === "low" && "text-amber-600",
-                          status === "normal" && "text-muted-foreground"
-                        )}>
-                          {stock} {p.unidad}
-                        </span>
-                        {status === "empty" && (
-                          <AlertTriangle className="h-3 w-3 text-destructive ml-2 inline" />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-            {filteredProducts.length === 0 && (
-              <p className="text-sm text-muted-foreground">No hay productos.</p>
-            )}
-          </div>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="text-sm font-bold uppercase text-muted-foreground flex items-center gap-2">
-            <CookingPot className="h-4 w-4" /> Recetas
-          </h2>
-          <div className="space-y-2">
-            {filteredRecs.map(r => (
-              <div 
-                key={r.id} 
-                className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent transition-colors cursor-pointer" 
-                onClick={() => onAdd(r, "receta")}
-              >
-                <div>
-                  <p className="font-medium text-sm">{r.nombre}</p>
-                  <p className="text-xs text-muted-foreground">{formatMoney(r.precio)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">
-                    {r.ingredientes?.length || 0} ingred.
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+        {viewMode === "productos" ? (
+          filteredProducts.map(cat => (
+            cat.productos.map(p => {
+              const stock = getStock(p.id);
+              const status = getStockStatus(stock, p.stock_minimo);
+              return (
+                <div 
+                  key={p.id} 
+                  className={cn(
+                    "group relative aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border bg-card transition-all cursor-pointer active:scale-95 shadow-sm hover:shadow-md",
+                    status === "empty" && "border-destructive/30 bg-destructive/5",
+                    status === "low" && "border-amber-400/30 bg-amber-500/5",
+                    status === "normal" && "hover:border-primary/50"
+                  )} 
+                  onClick={() => onAdd(p, "producto")}
+                >
+                  {p.imagen_url ? (
+                    <img src={p.imagen_url} alt="" className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover mb-1 group-hover:scale-110 transition-transform" />
+                  ) : (
+                    <Package className={cn(
+                      "h-8 w-8 mb-1 transition-colors",
+                      status === "empty" ? "text-destructive/50" : status === "low" ? "text-amber-500/50" : "text-muted-foreground/50"
+                    )} />
+                  )}
+                  <p className="text-[10px] md:text-[11px] font-black uppercase text-center leading-tight line-clamp-2 px-1">
+                    {p.nombre}
                   </p>
+                  <div className={cn(
+                    "absolute -top-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-black shadow-sm",
+                    status === "empty" ? "bg-destructive text-white" : status === "low" ? "bg-amber-500 text-white" : "bg-secondary text-muted-foreground"
+                  )}>
+                    {stock}
+                  </div>
                 </div>
+              );
+            })
+          ))
+        ) : (
+          filteredRecs.map(r => (
+            <div 
+              key={r.id} 
+              className="group relative aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border bg-card transition-all cursor-pointer active:scale-95 shadow-sm hover:shadow-md hover:border-primary/50" 
+              onClick={() => onAdd(r, "receta")}
+            >
+              {r.imagen_url ? (
+                <img src={r.imagen_url} alt="" className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover mb-1 group-hover:scale-110 transition-transform" />
+              ) : (
+                <CookingPot className="h-8 w-8 mb-1 text-muted-foreground/50" />
+              )}
+              <p className="text-[10px] md:text-[11px] font-black uppercase text-center leading-tight line-clamp-2 px-1">
+                {r.nombre}
+              </p>
+              <div className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-primary text-white text-[9px] font-black shadow-sm">
+                REC
               </div>
-            ))}
-            {filteredRecs.length === 0 && (
-              <p className="text-sm text-muted-foreground">No hay recetas.</p>
-            )}
-          </div>
-        </section>
+            </div>
+          ))
+        )}
       </div>
+      {(viewMode === "productos" ? filteredProducts.length === 0 : filteredRecs.length === 0) && (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+            <Search className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+            No se encontraron {viewMode}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

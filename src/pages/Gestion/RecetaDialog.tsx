@@ -7,24 +7,27 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Checkbox } from "../../components/ui/checkbox";
-import { Plus, Trash2, CookingPot, Info, Search } from "lucide-react";
+import { Plus, Trash2, CookingPot, Info, Search, Layers, CheckCircle2, Circle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { formatMoney } from "../../lib/format";
 import { useBodega } from "../../hooks/useBodega";
+import { useAreaOperativa } from "../../hooks/useAreaOperativa";
 import { Producto, Receta } from "./types";
 import BodegaBadge from "../../components/BodegaBadge";
 import ImageUpload from "../../components/ImageUpload";
+import { cn } from "../../lib/utils";
 
 interface RecetaDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   productos: Producto[];
+  categorias: any[];
   editingReceta?: Receta | null;
   onSuccess: () => void;
 }
 
-export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onSuccess }: RecetaDialogProps) {
-  const { bodegas } = useBodega();
+export function RecetaDialog({ open, onOpenChange, productos, categorias, editingReceta, onSuccess }: RecetaDialogProps) {
+  const { areas } = useAreaOperativa();
   const [saving, setSaving] = useState(false);
 
   const [nombre, setNombre] = useState("");
@@ -33,9 +36,11 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
   const [ivaIncluido, setIvaIncluido] = useState(false);
   const [ivaPorcentaje, setIvaPorcentaje] = useState("19");
   const [imagenUrl, setImagenUrl] = useState<string | null>(null);
-  const [ingredientes, setIngredientes] = useState<{ producto_id: string; bodega_id: string; cantidad: string }[]>([]);
-  const [searchPerBodega, setSearchPerBodega] = useState<Record<string, string>>({});
-  const [searchFocus, setSearchFocus] = useState<string | null>(null);
+  
+  const [selectedAreasIds, setSelectedAreasIds] = useState<string[]>([]);
+  const [ingredientes, setIngredientes] = useState<{ producto_id: string; cantidad: string }[]>([]);
+  const [busquedaProd, setBusquedaProd] = useState("");
+  const [showProductSearch, setShowProductSearch] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -46,10 +51,10 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
         setIvaIncluido(editingReceta.iva_incluido ?? false);
         setIvaPorcentaje(String(editingReceta.iva_porcentaje ?? 19));
         setImagenUrl(editingReceta.imagen_url ?? null);
+        setSelectedAreasIds(editingReceta.areas_operativas_ids || []);
         setIngredientes(
           (editingReceta.ingredientes || []).map(i => ({
             producto_id: i.producto_id,
-            bodega_id: i.bodega_id,
             cantidad: String(i.cantidad),
           }))
         );
@@ -67,17 +72,46 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
     setIvaPorcentaje("19");
     setImagenUrl(null);
     setIngredientes([]);
-    setSearchPerBodega({});
+    setSelectedAreasIds([]);
+    setBusquedaProd("");
   };
 
-  const addIngrediente = (bodegaId: string, productoId: string) => {
-    if (ingredientes.find(i => i.producto_id === productoId && i.bodega_id === bodegaId)) {
-      toast.error("Producto ya agregado desde esta bodega");
+  const toggleArea = (id: string) => {
+    setSelectedAreasIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  // Bodegas belonging to selected areas
+  const activeBodegasIds = useMemo(() => {
+    const ids = new Set<string>();
+    areas.filter(a => selectedAreasIds.includes(a.id)).forEach(a => {
+      a.bodegas_ids.forEach(bid => ids.add(bid));
+    });
+    return Array.from(ids);
+  }, [areas, selectedAreasIds]);
+
+  // Products available in active bodegas
+  const filteredProductos = useMemo(() => {
+    if (selectedAreasIds.length === 0) return [];
+    return productos.filter(p => {
+      // Check if product is in at least one of the active bodegas
+      const hasStock = p.bodegas_config?.some(bc => 
+        activeBodegasIds.includes(bc.bodega_id) && bc.stock_actual > 0
+      );
+      if (!hasStock) return false;
+      
+      const search = busquedaProd.toLowerCase();
+      return p.nombre.toLowerCase().includes(search);
+    });
+  }, [productos, selectedAreasIds, activeBodegasIds, busquedaProd]);
+
+  const addIngrediente = (productoId: string) => {
+    if (ingredientes.find(i => i.producto_id === productoId)) {
+      toast.error("Producto ya agregado");
       return;
     }
-    setIngredientes([...ingredientes, { producto_id: productoId, bodega_id: bodegaId, cantidad: "1" }]);
-    setSearchPerBodega(prev => ({ ...prev, [bodegaId]: "" }));
-    setSearchFocus(null);
+    setIngredientes([...ingredientes, { producto_id: productoId, cantidad: "1" }]);
+    setBusquedaProd("");
+    setShowProductSearch(false);
   };
 
   const updateIngrediente = (index: number, field: string, value: string | number) => {
@@ -90,16 +124,6 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
     setIngredientes(ingredientes.filter((_, i) => i !== index));
   };
 
-  const getProductsForBodega = (bodegaId: string) => {
-    return productos.filter(p => {
-      const hasBodega = p.bodegas_config?.some(b => b.bodega_id === bodegaId);
-      if (!hasBodega) return false;
-      const search = searchPerBodega[bodegaId]?.toLowerCase() || "";
-      if (!search) return true;
-      return p.nombre.toLowerCase().includes(search);
-    });
-  };
-
   const costoEstimado = useMemo(() => {
     return ingredientes.reduce((sum, ing) => {
       const prod = productos.find(p => p.id === ing.producto_id);
@@ -108,29 +132,24 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
   }, [ingredientes, productos]);
 
   const handleSave = async () => {
-    if (!nombre.trim()) {
-      toast.error("El nombre es obligatorio");
-      return;
-    }
+    if (!nombre.trim()) { toast.error("El nombre es obligatorio"); return; }
+    if (selectedAreasIds.length === 0) { toast.error("Selecciona al menos un Área Operativa"); return; }
 
-    const validIngredientes = ingredientes.filter(i => i.producto_id && i.bodega_id && Number(i.cantidad) > 0);
-    if (validIngredientes.length === 0) {
-      toast.error("Agrega al menos un ingrediente");
-      return;
-    }
+    const validIngredientes = ingredientes.filter(i => i.producto_id && Number(i.cantidad) > 0);
+    if (validIngredientes.length === 0) { toast.error("Agrega al menos un ingrediente"); return; }
 
     setSaving(true);
     try {
       const payload = {
         nombre: nombre.trim(),
         precio: Number(precio) || 0,
-        categoria_receta_id: categoriaRecetaId || null,
+        categoria_receta_id: categoriaRecetaId === "none" ? null : categoriaRecetaId || null,
         iva_incluido: ivaIncluido,
         iva_porcentaje: Number(ivaPorcentaje),
         imagen_url: imagenUrl,
+        areas_operativas_ids: selectedAreasIds,
         ingredientes: validIngredientes.map(i => ({
           producto_id: i.producto_id,
-          bodega_id: i.bodega_id,
           cantidad: Number(i.cantidad),
         })),
       };
@@ -154,113 +173,145 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <CookingPot className="h-5 w-5 text-indigo-500" />
+            <CookingPot className="h-5 w-5 text-primary" />
             {editingReceta ? "Editar Receta" : "Nueva Receta"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-6 py-2">
           <ImageUpload currentUrl={imagenUrl} onUploaded={setImagenUrl} folder="recipes" />
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Nombre *</Label>
-              <Input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Hamburguesa Especial" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre *</Label>
+              <Input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Hamburguesa Especial" className="rounded-xl border-2 font-bold" />
             </div>
             <div className="space-y-2">
-              <Label>Precio de venta ($)</Label>
-              <Input type="number" min="0" step="any" value={precio} onChange={e => setPrecio(e.target.value)} onFocus={e => e.target.select()} />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Categoría Receta</Label>
+              <Select value={categoriaRecetaId} onValueChange={setCategoriaRecetaId}>
+                <SelectTrigger className="rounded-xl border-2 font-bold"><SelectValue placeholder="Sin categoría" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categorias.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.nombre}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border rounded-md p-3">
-            <Checkbox id="receta-iva" checked={ivaIncluido} onCheckedChange={c => setIvaIncluido(!!c)} />
-            <label htmlFor="receta-iva" className="text-sm cursor-pointer flex-1">¿Precio incluye IVA?</label>
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">IVA:</span>
-              <Input type="number" min="0" max="100" value={ivaPorcentaje} onChange={e => setIvaPorcentaje(e.target.value)} className="h-7 w-16 text-right text-xs" />
-              <span className="text-xs">%</span>
-            </div>
+          <div className="space-y-2">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Precio de venta ($)</Label>
+            <Input type="number" min="0" step="any" value={precio} onChange={e => setPrecio(e.target.value)} onFocus={e => e.target.select()} className="rounded-xl border-2 font-bold" />
           </div>
 
-          <div className="space-y-3">
-            <Label>Ingredientes por Bodega</Label>
-            {bodegas.map(bodega => {
-              const searchKey = bodega.id;
-              const searchVal = searchPerBodega[searchKey] || "";
-              const isFocused = searchFocus === searchKey;
-              const prodsInBodega = getProductsForBodega(bodega.id);
-
-              return (
-                <div key={bodega.id} className="space-y-2">
-                  <BodegaBadge nombre={bodega.nombre} />
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar producto..."
-                      value={searchVal}
-                      onChange={e => setSearchPerBodega(prev => ({ ...prev, [searchKey]: e.target.value }))}
-                      onFocus={() => setSearchFocus(searchKey)}
-                      onBlur={() => setTimeout(() => setSearchFocus(null), 200)}
-                      className="pl-8 h-8 text-sm"
-                    />
-                    {isFocused && prodsInBodega.length > 0 && (
-                      <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-md border bg-popover shadow-md">
-                        {prodsInBodega.slice(0, 10).map(p => (
-                          <button
-                            key={p.id}
-                            className="w-full px-3 py-1.5 text-sm text-left hover:bg-accent"
-                            onMouseDown={() => addIngrediente(bodega.id, p.id)}
-                          >
-                            {p.nombre} <span className="text-muted-foreground">({p.unidad})</span>
-                          </button>
-                        ))}
-                      </div>
+          {/* ÁREAS OPERATIVAS SELECTOR */}
+          <div className="space-y-3 p-4 bg-muted/20 rounded-2xl border-2 border-dashed">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+              <Layers className="h-3.5 w-3.5" /> Áreas Operativas Disponibles
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {areas.map(a => {
+                const active = selectedAreasIds.includes(a.id);
+                return (
+                  <button
+                    key={a.id}
+                    type="button"
+                    onClick={() => toggleArea(a.id)}
+                    className={cn(
+                      "flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide transition-all",
+                      active ? "bg-primary text-primary-foreground border-primary" : "hover:bg-secondary text-muted-foreground"
                     )}
+                  >
+                    {active ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
+                    {a.nombre}
+                  </button>
+                );
+              })}
+            </div>
+            {selectedAreasIds.length === 0 && (
+              <p className="text-[10px] text-destructive font-bold flex items-center gap-1">
+                <Info className="h-3 w-3" /> Selecciona al menos un área para agregar ingredientes
+              </p>
+            )}
+          </div>
+
+          {/* INGREDIENTES */}
+          <div className="space-y-4">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ingredientes</Label>
+            
+            {selectedAreasIds.length > 0 && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar producto con stock en áreas seleccionadas..."
+                  value={busquedaProd}
+                  onChange={e => setBusquedaProd(e.target.value)}
+                  onFocus={() => setShowProductSearch(true)}
+                  onBlur={() => setTimeout(() => setShowProductSearch(false), 200)}
+                  className="pl-8 h-10 rounded-xl border-2 font-bold"
+                />
+                {showProductSearch && filteredProductos.length > 0 && (
+                  <div className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border bg-card shadow-2xl p-1">
+                    {filteredProductos.slice(0, 15).map(p => (
+                      <button
+                        key={p.id}
+                        className="w-full px-4 py-2 text-xs font-bold text-left hover:bg-accent rounded-lg flex justify-between items-center"
+                        onMouseDown={() => addIngrediente(p.id)}
+                      >
+                        <span>{p.nombre}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase">{p.unidad}</span>
+                      </button>
+                    ))}
                   </div>
-                  {ingredientes.filter(i => i.bodega_id === bodega.id).map((ing, idx) => {
-                    const globalIdx = ingredientes.findIndex(i => i.producto_id === ing.producto_id && i.bodega_id === ing.bodega_id);
-                    const prod = productos.find(p => p.id === ing.producto_id);
-                    return (
-                      <div key={idx} className="flex items-center gap-2 pl-2">
-                        <span className="text-sm flex-1 truncate">{prod?.nombre ?? "?"}</span>
-                        <Input
-                          type="number"
-                          min="0"
-                          step="any"
-                          value={ing.cantidad}
-                          onChange={e => updateIngrediente(globalIdx, "cantidad", e.target.value)}
-                          className="h-8 w-20 text-right text-sm"
-                          placeholder="Cant."
-                        />
-                        <span className="text-xs text-muted-foreground w-10">{prod?.unidad ?? ""}</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeIngrediente(globalIdx)}>
-                          <Trash2 className="h-3 w-3 text-destructive" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {ingredientes.map((ing, idx) => {
+                const prod = productos.find(p => p.id === ing.producto_id);
+                return (
+                  <div key={idx} className="flex items-center gap-3 p-3 bg-card rounded-2xl border border-white/5">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold truncate">{prod?.nombre ?? "Producto desconocido"}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="any"
+                        value={ing.cantidad}
+                        onChange={e => updateIngrediente(idx, "cantidad", e.target.value)}
+                        onFocus={e => e.target.select()}
+                        className="h-8 w-20 text-right font-black text-xs rounded-lg"
+                      />
+                      <span className="text-[10px] font-bold text-muted-foreground w-10 uppercase">{prod?.unidad ?? ""}</span>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg" onClick={() => removeIngrediente(idx)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           {ingredientes.length > 0 && (
-            <div className="text-xs text-muted-foreground border-t pt-2">
-              Costo estimado: {formatMoney(costoEstimado)}
+            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary">Costo Total Estimado</span>
+              <span className="text-lg font-black tracking-tighter text-primary">{formatMoney(costoEstimado)}</span>
             </div>
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+        <DialogFooter className="gap-2">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl font-black text-[10px] uppercase">Cancelar</Button>
           {editingReceta && (
             <Button 
-              variant="destructive" 
-              size="sm" 
+              variant="ghost" 
+              className="rounded-xl h-10 w-10 p-0 text-destructive hover:bg-destructive/10" 
               onClick={async () => {
                 if (!confirm("¿Eliminar esta receta?")) return;
                 await api.delete(`/operations/recipes/${editingReceta.id}`);
@@ -272,11 +323,11 @@ export function RecetaDialog({ open, onOpenChange, productos, editingReceta, onS
               <Trash2 className="h-4 w-4" />
             </Button>
           )}
-          <Button onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button onClick={handleSave} disabled={saving} className="rounded-xl font-black text-[10px] uppercase shadow-lg shadow-primary/20">
             {saving ? "Guardando..." : editingReceta ? "Guardar cambios" : "Crear receta"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
-}
+}

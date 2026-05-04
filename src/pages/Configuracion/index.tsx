@@ -1,8 +1,7 @@
-// src/pages/Configuracion/index.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
-import { Navigate } from "react-router-dom";
-import { ShieldCheck, Store, Users, Palette, ChevronRight } from "lucide-react";
+import { Navigate, useSearchParams } from "react-router-dom";
+import { ShieldCheck, Store, Users, Palette, ChevronRight, Mail, Warehouse, HelpCircle, Layers } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../components/ui/collapsible";
 import { cn } from "../../lib/utils";
 
@@ -10,25 +9,44 @@ import { useConfiguracion } from "./useConfiguracion";
 import { RestauranteConfig } from "./RestauranteConfig";
 import { UsuariosRoles } from "./UsuariosRoles";
 import { AparienciaConfig } from "./AparienciaConfig";
+import { PlantillasEmailConfig } from "./PlantillasEmailConfig";
+import { BodegasConfig } from "./BodegasConfig";
+import { SoporteConfig } from "./SoporteConfig";
+import { AreasOperativasConfig } from "./AreasOperativasConfig";
 
 export default function ConfiguracionPage() {
   const { isAdmin, user } = useAuth();
-  const { users, settings, updateRole, refresh } = useConfiguracion(isAdmin);
-  const [openSection, setOpenSection] = useState<string | null>("restaurante");
+  const { users, settings, updateRole, createUser, deleteUser, refresh } = useConfiguracion(isAdmin);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+
+  useEffect(() => {
+    if (tabParam) {
+      setOpenSection(tabParam);
+    }
+  }, [tabParam]);
 
   if (!isAdmin) return <Navigate to="/" replace />;
 
   const sections = [
     { id: "restaurante", label: "Restaurante", icon: Store, component: <RestauranteConfig settings={settings} onUpdate={refresh} /> },
-    { id: "usuarios", label: "Usuarios y Roles", icon: Users, component: <UsuariosRoles users={users} currentUser={user} onUpdateRole={updateRole} /> },
+    { id: "bodegas", label: "Bodegas", icon: Warehouse, component: <BodegasConfig /> },
+    { id: "areas", label: "Áreas Operativas", icon: Layers, component: <AreasOperativasConfig /> },
+    { id: "usuarios", label: "Usuarios y Roles", icon: Users, component: <UsuariosRoles users={users} currentUser={user} onUpdateRole={updateRole} onCreateUser={createUser} onDeleteUser={deleteUser} /> },
+    { id: "plantillas_email", label: "Plantillas de Email", icon: Mail, component: <PlantillasEmailConfig /> },
     { id: "tema", label: "Apariencia", icon: Palette, component: <AparienciaConfig /> },
+    { id: "soporte", label: "Soporte y Ayuda", icon: HelpCircle, component: <SoporteConfig /> },
   ];
 
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
-      <h1 className="text-xl font-bold flex items-center gap-2 mb-6">
-          <ShieldCheck className="h-5 w-5 text-primary" /> Configuración del Sistema
-      </h1>
+    <div className="space-y-6 max-w-4xl mx-auto">
+      <header className="space-y-1 px-2">
+        <h1 className="text-4xl font-black tracking-tighter">Configuración</h1>
+        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+          Ajustes y Administración del Sistema
+        </p>
+      </header>
       
       <div className="space-y-3">
         {sections.map((section) => (

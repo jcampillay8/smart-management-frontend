@@ -24,7 +24,13 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
         <div className="space-y-1">
           <h3 className="font-bold text-foreground leading-none">{product.nombre}</h3>
           <div className="flex items-center gap-2">
-            {product._bodegaName && <BodegaBadge nombre={product._bodegaName} />}
+            {product._bodegaName && (
+              <BodegaBadge 
+                nombre={product._bodegaName} 
+                color={product._bodegaColor} 
+                icono={product._bodegaIcon} 
+              />
+            )}
             <span className="text-[10px] text-muted-foreground uppercase font-black">{product.unidad}</span>
           </div>
         </div>
@@ -64,6 +70,7 @@ export function StockRowMobile({ product, entry, canEdit, onUpdate, isHighlighte
           <Input 
             type="number" 
             value={entry.cantidad}
+            onFocus={(e) => e.target.select()}
             onChange={(e) => onUpdate(product._entryKey, "cantidad", e.target.value)}
             className="h-10 text-center font-mono font-black bg-background border-input"
           />

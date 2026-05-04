@@ -38,5 +38,26 @@ export function useConfiguracion(isAdmin: boolean) {
     }
   };
 
-  return { users, settings, loading, updateRole, refresh: loadData };
+  const createUser = async (data: any) => {
+    try {
+      await api.post("/account/", data);
+      toast.success("Usuario creado exitosamente");
+      loadData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail || "Error al crear usuario");
+      throw e;
+    }
+  };
+
+  const deleteUser = async (userId: number) => {
+    try {
+      await api.delete(`/user/admin/${userId}`);
+      toast.success("Usuario eliminado");
+      loadData();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail || "Error al eliminar usuario");
+    }
+  };
+
+  return { users, settings, loading, updateRole, createUser, deleteUser, refresh: loadData };
 }

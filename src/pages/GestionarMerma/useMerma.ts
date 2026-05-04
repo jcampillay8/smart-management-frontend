@@ -21,9 +21,9 @@ export function useMerma() {
   const loadData = useCallback(async () => {
     try {
       const [mermasRes, prodRes, allMermasRes] = await Promise.all([
-        api.get("/inventory/history/?tipo_movimiento=merma"),
-        api.get("/inventory/products/"),
-        api.get("/inventory/history/?tipo_movimiento=merma&fecha_desde=1900-01-01"),
+        api.get("/inventory/history?tipo_movimiento=merma"),
+        api.get("/inventory/products"),
+        api.get("/inventory/history?tipo_movimiento=merma&fecha_desde=1900-01-01"),
       ]);
       setMermas(mermasRes.data ?? []);
       setAllMermas(allMermasRes.data ?? []);

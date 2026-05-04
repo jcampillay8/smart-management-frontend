@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import api from "../lib/api";
 
-type AppRole = "admin" | "supervisor" | "user";
+type AppRole = "propietario" | "admin" | "supervisor" | "user";
 
 interface User {
   id: number;
@@ -22,6 +22,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  isOwner: boolean;
   isSupervisor: boolean;
   hasMermaPermission: boolean;
 }
@@ -54,10 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData: User = res.data;
       setUser(userData);
       setRole(userData.role);
-      setHasMermaPermission(userData.role === "admin" || userData.role === "supervisor");
+      setHasMermaPermission(userData.role === "propietario" || userData.role === "admin" || userData.role === "supervisor");
     } catch (err) {
       console.error("Error fetching profile:", err);
       signOut();
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -111,7 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signIn,
         signOut,
-        isAdmin: role === "admin",
+        isAdmin: role === "propietario" || role === "admin",
+        isOwner: role === "propietario",
         isSupervisor: role === "supervisor",
         hasMermaPermission,
       }}

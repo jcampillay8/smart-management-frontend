@@ -13,6 +13,7 @@ export function useHistorial(selectedBodegaId: string) {
   const [filtroTipo, setFiltroTipo] = useState<TipoMovimiento>("all");
   const [fechaDesde, setFechaDesde] = useState<Date | undefined>();
   const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
+  const [filtroUsuario, setFiltroUsuario] = useState<string>("");
 
   const fetchHistorial = useCallback(async () => {
     setLoading(true);
@@ -82,6 +83,13 @@ export function useHistorial(selectedBodegaId: string) {
       const matchBodega = selectedBodegaId === "all" || r.bodega_id === selectedBodegaId;
       const matchProducto = filtroProducto === "all" || r.producto_id === filtroProducto;
       const matchTipo = filtroTipo === "all" || r.tipo_movimiento === filtroTipo;
+      
+      let matchUsuario = true;
+      if (filtroUsuario.trim() !== "") {
+        const uName = (r.user_display_name || "Sistema").toLowerCase();
+        matchUsuario = uName.includes(filtroUsuario.toLowerCase());
+      }
+      
       let matchFecha = true;
       if (fechaDesde) {
         const d = new Date(r.fecha_recuento + "T00:00:00");
@@ -91,15 +99,16 @@ export function useHistorial(selectedBodegaId: string) {
         const d = new Date(r.fecha_recuento + "T00:00:00");
         if (d > fechaHasta) matchFecha = false;
       }
-      return matchBodega && matchProducto && matchTipo && matchFecha;
+      return matchBodega && matchProducto && matchTipo && matchFecha && matchUsuario;
     });
-  }, [registros, selectedBodegaId, filtroProducto, filtroTipo, fechaDesde, fechaHasta]);
+  }, [registros, selectedBodegaId, filtroProducto, filtroTipo, fechaDesde, fechaHasta, filtroUsuario]);
 
   const clearFilters = useCallback(() => {
     setFiltroProducto("all");
     setFiltroTipo("all");
     setFechaDesde(undefined);
     setFechaHasta(undefined);
+    setFiltroUsuario("");
   }, []);
 
   const tipoLabel = (t: string) => {
@@ -126,6 +135,8 @@ export function useHistorial(selectedBodegaId: string) {
       setFechaDesde,
       fechaHasta,
       setFechaHasta,
+      filtroUsuario,
+      setFiltroUsuario,
       clearFilters,
     },
     computeBeforeAfter,

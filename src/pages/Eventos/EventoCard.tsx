@@ -77,7 +77,7 @@ export function EventoCard({
             <Button size="sm" variant="outline" onClick={onEdit} className="gap-1">
               <Pencil className="h-3.5 w-3.5" />
             </Button>
-            <Button size="sm" variant="ghost" onClick={onCancel} title="Cancelar evento" className="text-amber-600">
+            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onCancel(evento.id); }} title="Cancelar evento" className="text-amber-600">
               <Ban className="h-4 w-4" />
             </Button>
           </>

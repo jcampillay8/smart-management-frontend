@@ -12,13 +12,14 @@ import { EventoDialog } from "./EventoDialog";
 import { Evento } from "./types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "../../components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { ResumenFaltantes } from "./ResumenFaltantes";
 
 export default function EventosPage() {
   const { isAdmin } = useAuth();
   const { 
     eventos, loading, createEvento, updateEvento, deleteEvento, 
     executeEvento, cancelEvento, reactivateEvento,
-    prodName, prodCost, getEventCost
+    prodName, prodCost, getEventCost, stocks, productos
   } = useEventos();
   
   const [viewTab, setViewTab] = useState<"proximos" | "historial" | "cancelados">("proximos");
@@ -107,13 +108,13 @@ export default function EventosPage() {
   if (loading) return <div className="p-8 text-center">Cargando eventos...</div>;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h1 className="text-xl font-bold flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 text-primary" /> Eventos Programados
-          </h1>
-          <p className="text-sm text-muted-foreground">Crea eventos y ejecútalos para consumir inventario.</p>
+    <div className="space-y-6">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tighter">Eventos</h1>
+          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+            Programación y Control de Consumo
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => setExportOpen(true)} className="gap-1">
@@ -126,7 +127,9 @@ export default function EventosPage() {
             <Plus className="h-4 w-4" /> Nuevo Evento
           </Button>
         </div>
-      </div>
+      </header>
+
+      <ResumenFaltantes eventos={eventos} stocks={stocks} productos={productos} />
 
       {showCalendar && (
         <div className="rounded-xl border p-4 space-y-4">
@@ -197,7 +200,7 @@ export default function EventosPage() {
                     getStatus={getStatus}
                     onEdit={() => handleEdit(ev)} 
                     onDelete={() => setDeleteTarget(ev)}
-                    onCancel={() => handleCancel(ev)}
+                    onCancel={() => handleCancel(ev.id)}
                     onDetail={() => setDetailEvento(ev)}
                     onExecute={() => handleExecute(ev.id)}
                   />
@@ -302,14 +305,31 @@ export default function EventosPage() {
               <div className="border-t pt-3 space-y-1">
                 <p className="text-sm font-medium mb-2">📦 Productos ({detailEvento.items.length})</p>
                 {detailEvento.items.map((item, idx) => {
-                  const cost = item.cantidad * prodCost(item.producto_id);
+                  const stockItem = stocks.find(s => s.producto_id === item.producto_id && s.bodega_id === item.bodega_id);
+                  const currentStock = stockItem?.stock_actual || 0;
+                  const isShort = currentStock < item.cantidad;
+                  
                   return (
-                    <div key={idx} className="flex justify-between text-sm rounded px-2 py-1.5 bg-secondary/30">
-                      <span className="flex items-center gap-1.5">
-                        {prodName(item.producto_id)}
-                      </span>
-                      <div className="text-right">
-                        <span className="font-bold">{item.cantidad}</span>
+                    <div key={idx} className="flex flex-col gap-1 rounded-xl border p-2 bg-secondary/20">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-bold truncate">{prodName(item.producto_id)}</span>
+                        <div className="text-right">
+                          <span className={cn(
+                            "font-black",
+                            isShort ? "text-destructive" : "text-primary"
+                          )}>
+                            {item.cantidad}
+                          </span>
+                          <span className="text-muted-foreground text-[10px] ml-1">/{currentStock}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                         <span className="text-[10px] text-muted-foreground uppercase font-black">Bodega: {item.bodega_id?.slice(0,8) || "General"}</span>
+                         {isShort && (
+                           <span className="flex items-center gap-1 text-[10px] font-bold text-destructive">
+                             <AlertTriangle className="h-3 w-3" /> Faltante: {item.cantidad - currentStock}
+                           </span>
+                         )}
                       </div>
                     </div>
                   );

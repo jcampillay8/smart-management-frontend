@@ -1,66 +1,46 @@
-import { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
+import { createContext, useContext, useCallback, ReactNode } from "react";
 import { toast } from "sonner";
-
-interface UndoAction {
-  label: string;
-  undo: () => Promise<void>;
-}
+import api from "../lib/api";
 
 interface UndoRedoContextType {
-  canUndo: boolean;
-  canRedo: boolean;
   undo: () => Promise<void>;
   redo: () => Promise<void>;
-  pushAction: (action: UndoAction & { redo: () => Promise<void> }) => void;
 }
 
 const UndoRedoContext = createContext<UndoRedoContextType | undefined>(undefined);
 
-type FullAction = UndoAction & { redo: () => Promise<void> };
-
 export function UndoRedoProvider({ children }: { children: ReactNode }) {
-  const [undoStack, setUndoStack] = useState<FullAction[]>([]);
-  const [redoStack, setRedoStack] = useState<FullAction[]>([]);
-  const undoRef = useRef(undoStack);
-  const redoRef = useRef(redoStack);
-  undoRef.current = undoStack;
-  redoRef.current = redoStack;
-
-  const pushAction = useCallback((action: FullAction) => {
-    setUndoStack(prev => [...prev.slice(-19), action]);
-    setRedoStack([]);
-  }, []);
-
   const undo = useCallback(async () => {
-    const stack = undoRef.current;
-    const action = stack[stack.length - 1];
-    if (!action) return;
     try {
-      await action.undo();
-      setUndoStack(prev => prev.slice(0, -1));
-      setRedoStack(prev => [...prev, action]);
-      toast.success(`Deshecho: ${action.label}`);
+      const res = await api.post("/api/inventory/stock/undo");
+      toast.success(res.data.message || "Movimientos deshechos con éxito.");
+      // Opcional: disparar evento para refrescar
+      window.dispatchEvent(new CustomEvent("inventory_refresh"));
     } catch (e: any) {
-      toast.error("Error al deshacer: " + e.message);
+      if (e.response?.status === 404) {
+         toast.error("No hay movimientos recientes para deshacer.");
+      } else {
+         toast.error("Error al deshacer: " + (e.response?.data?.detail || e.message));
+      }
     }
   }, []);
 
   const redo = useCallback(async () => {
-    const stack = redoRef.current;
-    const action = stack[stack.length - 1];
-    if (!action) return;
     try {
-      await action.redo();
-      setRedoStack(prev => prev.slice(0, -1));
-      setUndoStack(prev => [...prev, action]);
-      toast.success(`Rehecho: ${action.label}`);
+      const res = await api.post("/api/inventory/stock/redo");
+      toast.success(res.data.message || "Movimientos rehechos con éxito.");
+      window.dispatchEvent(new CustomEvent("inventory_refresh"));
     } catch (e: any) {
-      toast.error("Error al rehacer: " + e.message);
+      if (e.response?.status === 404) {
+         toast.error("No hay movimientos para rehacer.");
+      } else {
+         toast.error("Error al rehacer: " + (e.response?.data?.detail || e.message));
+      }
     }
   }, []);
 
   return (
-    <UndoRedoContext.Provider value={{ canUndo: undoStack.length > 0, canRedo: redoStack.length > 0, undo, redo, pushAction }}>
+    <UndoRedoContext.Provider value={{ undo, redo }}>
       {children}
     </UndoRedoContext.Provider>
   );

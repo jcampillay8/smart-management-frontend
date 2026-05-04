@@ -5,6 +5,7 @@ import { cn } from "../../../lib/utils";
 // import { StockRowMobile } from "./StockRowMobile"; 
 import { Categoria, DisplayProduct, StockEntry } from "../types";
 import { Package2 } from "lucide-react";
+import { CategoryIcon } from "../../../lib/icons";
 
 /**
  * Esta constante es la clave para la alineación. 
@@ -66,9 +67,13 @@ export function StockTable({
         <div key={cat.id} className="space-y-6">
           {/* Encabezado de Categoría Estilizado */}
           <div className="flex items-center gap-4 px-1">
-            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20">
+            <div 
+              className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20"
+              style={{ color: cat.color || "var(--primary)", borderColor: cat.color ? `${cat.color}40` : undefined }}
+            >
+              <CategoryIcon name={cat.icono} className="h-3.5 w-3.5" />
               {cat.nombre}
-            </h2>
+            </div>
             <div className="h-[1px] flex-1 bg-gradient-to-r from-primary/30 via-primary/5 to-transparent"></div>
           </div>
 

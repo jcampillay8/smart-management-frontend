@@ -32,6 +32,7 @@ export default function AppLayout() {
     <div className="flex min-h-screen bg-background text-foreground">
       <Sidebar 
         logo={restaurantConfig.logo_url} 
+        name={restaurantConfig.nombre}
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
       />
@@ -39,6 +40,7 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar 
           restaurantName={restaurantConfig.nombre} 
+          logoUrl={restaurantConfig.logo_url}
           onMenuClick={() => setIsSidebarOpen(true)} 
         />
         

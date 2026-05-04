@@ -9,8 +9,11 @@ import { Label } from "../../components/ui/label";
 import { Checkbox } from "../../components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useBodega } from "../../hooks/useBodega";
+import { useProveedores } from "../Proveedores/useProveedores";
 import { Categoria, Producto } from "./types";
 import BodegaBadge from "../../components/BodegaBadge";
+import { BarcodeScanner } from "../../components/BarcodeScanner";
+import { Camera, DollarSign } from "lucide-react";
 
 interface ProductoDialogProps {
   open: boolean;
@@ -31,26 +34,26 @@ const UNIDADES = [
 
 export function ProductoDialog({ open, onOpenChange, categorias, editingProduct, onSuccess }: ProductoDialogProps) {
   const { bodegas } = useBodega();
+  const { proveedores } = useProveedores();
   const [saving, setSaving] = useState(false);
 
   const [nombre, setNombre] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [unidad, setUnidad] = useState("unidad");
-  const [costoNeto, setCostoNeto] = useState("0");
-  const [ivaPorcentaje, setIvaPorcentaje] = useState("19");
-  const [costoBruto, setCostoBruto] = useState("0");
   const [precioVenta, setPrecioVenta] = useState("");
   const [marca, setMarca] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [codigoBarra, setCodigoBarra] = useState("");
-  const [factorConversion, setFactorConversion] = useState("");
-  const [unidadConversion, setUnidadConversion] = useState("");
+  const [sku, setSku] = useState("");
   const [imagenUrl, setImagenUrl] = useState<string | null>(null);
+  const [showScanner, setShowScanner] = useState(false);
 
   const [bodegaChecked, setBodegaChecked] = useState<Record<string, boolean>>({});
   const [bodegaMinimos, setBodegaMinimos] = useState<Record<string, string>>({});
   const [bodegaCoordLetra, setBodegaCoordLetra] = useState<Record<string, string>>({});
   const [bodegaCoordNumero, setBodegaCoordNumero] = useState<Record<string, string>>({});
+  const [factorConversion, setFactorConversion] = useState("1");
+  const [unidadConversion, setUnidadConversion] = useState("mL");
 
   useEffect(() => {
     if (open) {
@@ -58,16 +61,11 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         setNombre(editingProduct.nombre);
         setCategoriaId(editingProduct.categoria_id);
         setUnidad(editingProduct.unidad);
-        setCostoNeto(String(editingProduct.costo_unitario));
-        setIvaPorcentaje(String(editingProduct.iva_porcentaje ?? 19));
-        const iva = editingProduct.iva_porcentaje ?? 19;
-        setCostoBruto(String(Math.round(editingProduct.costo_unitario * (1 + iva / 100))));
         setPrecioVenta(editingProduct.precio_venta ? String(editingProduct.precio_venta) : "");
         setMarca(editingProduct.marca ?? "");
         setProveedor(editingProduct.proveedor ?? "");
         setCodigoBarra(editingProduct.codigo_barra ?? "");
-        setFactorConversion(editingProduct.factor_conversion ? String(editingProduct.factor_conversion) : "");
-        setUnidadConversion(editingProduct.unidad_conversion ?? "");
+        setSku(editingProduct.sku ?? "");
         setImagenUrl(editingProduct.imagen_url ?? null);
 
         const checked: Record<string, boolean> = {};
@@ -77,6 +75,8 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         editingProduct.bodegas_config?.forEach(b => {
           checked[b.bodega_id] = true;
           mins[b.bodega_id] = String(b.stock_minimo);
+          coordL[b.bodega_id] = b.coordenada_letra ?? "";
+          coordN[b.bodega_id] = b.coordenada_numero ?? "";
         });
         setBodegaChecked(checked);
         setBodegaMinimos(mins);
@@ -92,15 +92,11 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
     setNombre("");
     setCategoriaId(categorias[0]?.id ?? "");
     setUnidad("unidad");
-    setCostoNeto("0");
-    setIvaPorcentaje("19");
-    setCostoBruto("0");
     setPrecioVenta("");
     setMarca("");
     setProveedor("");
     setCodigoBarra("");
-    setFactorConversion("");
-    setUnidadConversion("");
+    setSku("");
     setImagenUrl(null);
 
     const checked: Record<string, boolean> = {};
@@ -119,51 +115,30 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
     setBodegaCoordNumero(coordN);
   };
 
-  const calcBrutoFromNeto = (neto: number, iva: number) => Math.round(neto * (1 + iva / 100));
-  const calcNetoFromBruto = (bruto: number, iva: number) => Math.round(bruto / (1 + iva / 100));
-
-  const handleCostoNetoChange = (val: string) => {
-    setCostoNeto(val);
-    setCostoBruto(String(calcBrutoFromNeto(Number(val) || 0, Number(ivaPorcentaje) || 0)));
-  };
-
-  const handleCostoBrutoChange = (val: string) => {
-    setCostoBruto(val);
-    setCostoNeto(String(calcNetoFromBruto(Number(val) || 0, Number(ivaPorcentaje) || 0)));
-  };
-
-  const handleIvaChange = (val: string) => {
-    setIvaPorcentaje(val);
-    setCostoBruto(String(calcBrutoFromNeto(Number(costoNeto) || 0, Number(val) || 0)));
-  };
-
   const handleSave = async () => {
     if (!nombre.trim() || !categoriaId) {
       toast.error("Completa los campos obligatorios");
       return;
     }
-
     const selectedBodegaIds = Object.entries(bodegaChecked).filter(([, v]) => v).map(([k]) => k);
     if (selectedBodegaIds.length === 0) {
       toast.error("Selecciona al menos una bodega");
       return;
     }
-
     setSaving(true);
     try {
       const payload = {
         nombre: nombre.trim(),
         categoria_id: categoriaId,
         unidad,
-        costo_unitario: Number(costoNeto),
+        costo_unitario: 0,
         iva_incluido: false,
-        iva_porcentaje: Number(ivaPorcentaje),
+        iva_porcentaje: 19,
         precio_venta: precioVenta ? Number(precioVenta) : null,
         marca: marca.trim() || null,
         proveedor: proveedor.trim() || null,
         codigo_barra: codigoBarra.trim() || null,
-        factor_conversion: factorConversion ? Number(factorConversion) : null,
-        unidad_conversion: unidadConversion.trim() || null,
+        sku: sku.trim() || null,
         imagen_url: imagenUrl,
         bodegas_config: selectedBodegaIds.map(bid => ({
           bodega_id: bid,
@@ -172,7 +147,6 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
           coordenada_numero: bodegaCoordNumero[bid]?.trim() || null,
         })),
       };
-
       if (editingProduct) {
         await api.put(`/inventory/products/${editingProduct.id}`, payload);
         toast.success("Producto actualizado");
@@ -180,7 +154,6 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         await api.post("/inventory/products", payload);
         toast.success("Producto creado");
       }
-
       onSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -198,6 +171,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         </DialogHeader>
 
         <div className="grid gap-4 py-2">
+          {/* Nombre + Categoría */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Nombre *</Label>
@@ -214,56 +188,76 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
             </div>
           </div>
 
-          <div className="space-y-3 border rounded-md p-3">
+          {/* PRECIO DE VENTA — Opcional */}
+          <div className="border rounded-xl p-4 bg-indigo-50/50 dark:bg-indigo-950/20 space-y-2">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-indigo-500" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+                Precio de Venta{" "}
+                <span className="text-muted-foreground font-normal normal-case tracking-normal text-xs">(opcional)</span>
+              </Label>
+            </div>
+            <Input
+              type="number"
+              value={precioVenta}
+              onFocus={e => e.target.select()}
+              onChange={e => setPrecioVenta(e.target.value)}
+              placeholder="Sin definir — se podrá agregar al registrar compras"
+              className="h-10 font-bold border-indigo-300 dark:border-indigo-700 focus:border-indigo-500"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              El costo unitario se actualizará automáticamente al escanear facturas de compra.
+            </p>
+          </div>
+
+          {/* Bodegas */}
+          <div className="space-y-3 border rounded-lg p-3">
             <Label className="text-xs font-bold uppercase text-muted-foreground">Bodegas</Label>
             <div className="grid gap-2">
               <div className="grid grid-cols-[1fr_5rem_5rem] gap-2 px-1">
                 <span className="text-[10px] text-muted-foreground">Bodega</span>
                 <span className="text-[10px] text-muted-foreground text-right">Stock mín.</span>
-                <span className="text-[10px] text-muted-foreground text-right">Coord.</span>
+                <span className="text-[10px] text-muted-foreground text-right">Ubicación</span>
               </div>
               {bodegas.map(bodega => (
-                <div key={bodega.id} className="space-y-1">
-                  <div className="grid grid-cols-[1fr_5rem_5rem] items-center gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={!!bodegaChecked[bodega.id]}
-                        onCheckedChange={c => setBodegaChecked(prev => ({ ...prev, [bodega.id]: !!c }))}
-                      />
-                      <BodegaBadge nombre={bodega.nombre} />
-                    </label>
-                    <Input
-                      type="number"
-                      min="0"
-                      disabled={!bodegaChecked[bodega.id]}
-                      value={bodegaMinimos[bodega.id] ?? "0"}
-                      onChange={e => setBodegaMinimos(prev => ({ ...prev, [bodega.id]: e.target.value }))}
-                      className="h-8 text-right text-sm"
+                <div key={bodega.id} className="grid grid-cols-[1fr_5rem_5rem] items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={!!bodegaChecked[bodega.id]}
+                      onCheckedChange={c => setBodegaChecked(prev => ({ ...prev, [bodega.id]: !!c }))}
                     />
-                    <div className="flex items-center gap-1">
-                      <Input
-                        value={bodegaCoordLetra[bodega.id] ?? ""}
-                        onChange={e => setBodegaCoordLetra(prev => ({ ...prev, [bodega.id]: e.target.value.toUpperCase() }))}
-                        placeholder="A"
-                        disabled={!bodegaChecked[bodega.id]}
-                        className="h-8 w-12 text-center text-sm uppercase"
-                        maxLength={2}
-                      />
-                      <Input
-                        value={bodegaCoordNumero[bodega.id] ?? ""}
-                        onChange={e => setBodegaCoordNumero(prev => ({ ...prev, [bodega.id]: e.target.value }))}
-                        placeholder="1"
-                        disabled={!bodegaChecked[bodega.id]}
-                        className="h-8 w-12 text-center text-sm"
-                        maxLength={3}
-                      />
-                    </div>
+                    <BodegaBadge nombre={bodega.nombre} color={bodega.color} icono={bodega.icono} />
+                  </label>
+                  <Input
+                    type="number" min="0"
+                    disabled={!bodegaChecked[bodega.id]}
+                    value={bodegaMinimos[bodega.id] ?? "0"}
+                    onFocus={e => e.target.select()}
+                    onChange={e => setBodegaMinimos(prev => ({ ...prev, [bodega.id]: e.target.value }))}
+                    className="h-8 text-right text-sm"
+                  />
+                  <div className="flex items-center gap-1">
+                    <Input
+                      value={bodegaCoordLetra[bodega.id] ?? ""}
+                      onFocus={e => e.target.select()}
+                      onChange={e => setBodegaCoordLetra(prev => ({ ...prev, [bodega.id]: e.target.value.toUpperCase() }))}
+                      placeholder="A" disabled={!bodegaChecked[bodega.id]}
+                      className="h-8 w-12 text-center text-sm uppercase" maxLength={2}
+                    />
+                    <Input
+                      value={bodegaCoordNumero[bodega.id] ?? ""}
+                      onFocus={e => e.target.select()}
+                      onChange={e => setBodegaCoordNumero(prev => ({ ...prev, [bodega.id]: e.target.value }))}
+                      placeholder="1" disabled={!bodegaChecked[bodega.id]}
+                      className="h-8 w-12 text-center text-sm" maxLength={3}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Unidad + Marca */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Unidad</Label>
@@ -280,6 +274,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
             </div>
           </div>
 
+          {/* Factor de conversión */}
           {unidad === "unidad" && (
             <div className="border rounded-md p-3 space-y-2">
               <Label className="text-xs font-medium text-muted-foreground">Factor de conversión (opcional)</Label>
@@ -287,15 +282,8 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">Equivale a</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="any"
-                    value={factorConversion}
-                    onChange={e => setFactorConversion(e.target.value)}
-                    placeholder="900"
-                    className="h-8 text-sm"
-                  />
+                  <Input type="number" min="0" step="any" value={factorConversion}
+                    onChange={e => setFactorConversion(e.target.value)} placeholder="900" className="h-8 text-sm" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Unidad</Label>
@@ -310,80 +298,66 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
             </div>
           )}
 
+          {/* Proveedor + Código de barra */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Proveedor (opcional)</Label>
-              <Input value={proveedor} onChange={e => setProveedor(e.target.value)} placeholder="Ej: Distribuidora ABC" />
+              <Input value={proveedor} onChange={e => setProveedor(e.target.value)}
+                placeholder="Ej: Distribuidora ABC" list="provider-suggestions" />
+              <datalist id="provider-suggestions">
+                {proveedores.map(p => <option key={p.id} value={p.nombre_empresa} />)}
+              </datalist>
             </div>
             <div className="space-y-2">
-              <Label>Código de barra (opcional)</Label>
-              <Input value={codigoBarra} onChange={e => setCodigoBarra(e.target.value)} placeholder="Escanear o ingresar..." />
-            </div>
-          </div>
-
-          <div className="border rounded-md p-3 space-y-3">
-            <Label className="text-xs font-bold uppercase text-muted-foreground">Costos</Label>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1">
-                <Label className="text-xs">Costo Neto</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={costoNeto}
-                  onChange={e => handleCostoNetoChange(e.target.value)}
-                  onFocus={e => e.target.select()}
-                  className="text-sm"
-                />
+              <Label>Código de barra</Label>
+              <div className="relative">
+                <Input value={codigoBarra} onChange={e => setCodigoBarra(e.target.value)}
+                  placeholder="Escanear o ingresar..." />
+                <Button variant="ghost" size="icon"
+                  className="absolute right-1 top-1 h-7 w-7 text-primary hover:bg-primary/10"
+                  onClick={() => setShowScanner(true)}>
+                  <Camera className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">IVA %</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={ivaPorcentaje}
-                  onChange={e => handleIvaChange(e.target.value)}
-                  onFocus={e => e.target.select()}
-                  className="text-sm"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Costo + IVA</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={costoBruto}
-                  onChange={e => handleCostoBrutoChange(e.target.value)}
-                  onFocus={e => e.target.select()}
-                  className="text-sm"
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Precio de Venta (opcional)</Label>
-              <Input
-                type="number"
-                min="0"
-                step="any"
-                value={precioVenta}
-                onChange={e => setPrecioVenta(e.target.value)}
-                onFocus={e => e.target.select()}
-                placeholder="No aplica"
-                className="text-sm"
-              />
             </div>
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Guardando..." : editingProduct ? "Actualizar" : "Crear Producto"}
-          </Button>
+        <DialogFooter className="flex justify-between sm:justify-between items-center w-full">
+          <div>
+            {editingProduct && (
+              <Button variant="destructive" size="sm" className="h-9 font-bold px-4"
+                onClick={async () => {
+                  if (confirm(`¿Estás seguro de eliminar "${editingProduct.nombre}"? Esta acción no se puede deshacer.`)) {
+                    try {
+                      await api.delete(`/inventory/products/${editingProduct.id}`);
+                      toast.success("Producto eliminado");
+                      onSuccess();
+                      onOpenChange(false);
+                    } catch (e) {
+                      toast.error("Error al eliminar producto");
+                    }
+                  }
+                }}>
+                Eliminar Producto
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Guardando..." : editingProduct ? "Actualizar" : "Crear Producto"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
+
+      {showScanner && (
+        <BarcodeScanner
+          onScan={(code) => { setCodigoBarra(code); setShowScanner(false); toast.success(`Código detectado: ${code}`); }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
     </Dialog>
   );
 }

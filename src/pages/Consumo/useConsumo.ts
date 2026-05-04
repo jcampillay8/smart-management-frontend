@@ -2,13 +2,12 @@
 import { useState, useEffect, useMemo } from "react";
 import api from "../../lib/api";
 import { toast } from "sonner";
-import { format } from "date-fns";
 import { Categoria, Producto, Receta, CartItem, ConsumptionRecord } from "./types";
 
-export function useConsumo(bodegaId: string = "all") {
+export function useConsumo(bodegaId: string = "all", areaId: string | null = null) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [allRecetas, setAllRecetas] = useState<Receta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -29,14 +28,22 @@ export function useConsumo(bodegaId: string = "all") {
 
       setCategorias(catRes.data || []);
       setProductos(prodRes.data || []);
-      setRecetas(recetaRes.data || []);
+      setAllRecetas(recetaRes.data || []);
       setConsumptionLog(logRes.data || []);
 
+      const todayStr = new Date().toISOString().split("T")[0];
       const stockMap: Record<string, number> = {};
       const lotsMap: Record<string, { fecha_vencimiento: string; cantidad: number }[]> = {};
       
       (stockRes.data || []).forEach((s: any) => {
         const prodId = s.producto_id;
+        
+        // --- FILTRO DE VENCIMIENTO ---
+        // Si tiene fecha de vencimiento y es anterior a hoy, no lo contamos para el consumo
+        if (s.fecha_vencimiento && s.fecha_vencimiento < todayStr) {
+          return;
+        }
+
         if (!stockMap[prodId]) {
           stockMap[prodId] = 0;
           lotsMap[prodId] = [];
@@ -64,12 +71,13 @@ export function useConsumo(bodegaId: string = "all") {
     loadData();
   }, [bodegaId]);
 
+  const recetas = useMemo(() => {
+    if (!areaId) return allRecetas;
+    return allRecetas.filter(r => r.areas_operativas_ids?.includes(areaId));
+  }, [allRecetas, areaId]);
+
   const getStock = (productoId: string): number => {
     return stockByProduct[productoId] ?? 0;
-  };
-
-  const getLots = (productoId: string): { fecha_vencimiento: string; cantidad: number }[] => {
-    return lotsByProduct[productoId] ?? [];
   };
 
   const filteredProducts = useMemo(() => {
@@ -118,18 +126,30 @@ export function useConsumo(bodegaId: string = "all") {
     setCart(prev => prev.map(i => i.id === id && i.type === type ? { ...i, quantity: qty } : i));
   };
 
-  const hasStockForRecipe = (receta: Receta, qty: number): boolean => {
-    const ingredients = receta.ingredientes || [];
-    for (const ing of ingredients) {
-      const needed = ing.cantidad * qty;
-      const available = stockByProduct[ing.producto_id] ?? 0;
-      if (available < needed) return false;
-    }
-    return true;
-  };
-
   const refreshLog = () => {
     loadData();
+  };
+
+  const updateConsumo = async (recordId: string, data: { cantidad: number; motivo_merma?: string; descripcion_merma?: string }) => {
+    try {
+      await api.put(`/inventory/stock/consume/${recordId}`, data);
+      toast.success("Consumo actualizado");
+      refreshLog();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail || "Error al actualizar consumo");
+      throw e;
+    }
+  };
+
+  const deleteConsumo = async (recordId: string) => {
+    try {
+      await api.delete(`/inventory/stock/consume/${recordId}`);
+      toast.success("Consumo eliminado");
+      refreshLog();
+    } catch (e: any) {
+      toast.error(e.response?.data?.detail || "Error al eliminar consumo");
+      throw e;
+    }
   };
 
   return {
@@ -145,10 +165,10 @@ export function useConsumo(bodegaId: string = "all") {
     removeFromCart,
     updateQuantity,
     getStock,
-    getLots,
     groupedProducts,
-    hasStockForRecipe,
     consumptionLog,
     refreshLog,
+    updateConsumo,
+    deleteConsumo,
   };
-}
+}

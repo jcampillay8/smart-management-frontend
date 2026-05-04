@@ -1,18 +1,16 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Usamos el proxy de Vite relativo en desarrollo y producción
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
 });
 
-// Interceptor para inyectar el token JWT en cada petición
+// Eliminado: interceptor que inyecta el token JWT desde localStorage.
+// Al delegar en las cookies (Session), no debemos mezclar ambas cosas.
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 });
 
@@ -21,8 +19,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // Opcional: Implementar Refresh Token aquí o redirigir al login
-      localStorage.removeItem('access_token');
+      // Redirigir al login si la sesión caducó
       if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }

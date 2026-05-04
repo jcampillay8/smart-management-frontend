@@ -8,6 +8,8 @@ import { StockEntry, Producto, Categoria } from "../types";
 interface Bodega {
   id: string;
   nombre: string;
+  color?: string;
+  icono?: string;
 }
 
 export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: string) {
@@ -69,13 +71,13 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
             
             const key = `${p.id}::${bodega.id}`;
             init[key] = {
-              cantidad: lots.length === 1 ? String(lots[0].stock_actual) : "0",
+              cantidad: lots.length === 1 ? lots[0].stock_actual : 0,
               fecha_recuento: today,
               fecha_vencimiento: lots.length === 1 ? (lots[0].fecha_vencimiento || "") : "",
               multiExpiry: lots.length > 1,
               expiryEntries: lots.length > 0 ? lots.map(l => ({ 
                 fecha_vencimiento: l.fecha_vencimiento || "", 
-                cantidad: String(l.stock_actual) 
+                cantidad: l.stock_actual 
               })) : [],
             };
           });
@@ -93,13 +95,13 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
           );
           
           init[p.id] = {
-            cantidad: lots.length === 1 ? String(lots[0].stock_actual) : "0",
+            cantidad: lots.length === 1 ? lots[0].stock_actual : 0,
             fecha_recuento: today,
             fecha_vencimiento: lots.length === 1 ? (lots[0].fecha_vencimiento || "") : "",
             multiExpiry: lots.length > 1,
             expiryEntries: lots.length > 0 ? lots.map(l => ({ 
               fecha_vencimiento: l.fecha_vencimiento || "", 
-              cantidad: String(l.stock_actual) 
+              cantidad: l.stock_actual 
             })) : [],
           };
         });
@@ -140,7 +142,7 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
           multiExpiry: checked,
           // Al activar, si no hay lotes, inicializamos con el valor actual
           expiryEntries: checked && entry.expiryEntries.length === 0
-            ? [{ fecha_vencimiento: entry.fecha_vencimiento || "", cantidad: entry.cantidad || "" }]
+            ? [{ fecha_vencimiento: entry.fecha_vencimiento || "", cantidad: entry.cantidad || 0 }]
             : entry.expiryEntries,
         }
       };
@@ -155,7 +157,7 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
         ...prev,
         [key]: {
           ...entry,
-          expiryEntries: [...entry.expiryEntries, { fecha_vencimiento: "", cantidad: "" }]
+          expiryEntries: [...entry.expiryEntries, { fecha_vencimiento: "", cantidad: 0 }]
         }
       };
     });

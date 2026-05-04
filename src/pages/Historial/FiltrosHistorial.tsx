@@ -1,10 +1,10 @@
-// src/pages/Historial/FiltrosHistorial.tsx
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "../../components/ui/popover";
 import { EnhancedCalendar } from "../../components/ui/enhanced-calendar";
 import { format, isSameDay } from "date-fns";
-import { CalendarIcon, FilterX, ListFilter, Package } from "lucide-react";
+import { CalendarIcon, FilterX, ListFilter, Package, Search } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { TipoMovimiento, Producto } from "./types";
 
@@ -26,6 +26,8 @@ interface Props {
   setFechaDesde: (v: Date | undefined) => void;
   fechaHasta: Date | undefined;
   setFechaHasta: (v: Date | undefined) => void;
+  filtroUsuario?: string;
+  setFiltroUsuario?: (v: string) => void;
   productos: Producto[];
 }
 
@@ -38,23 +40,37 @@ export function FiltrosHistorial({
   setFechaDesde,
   fechaHasta,
   setFechaHasta,
+  filtroUsuario = "",
+  setFiltroUsuario,
   productos,
 }: Props) {
   const hasFilters =
     filtroProducto !== "all" ||
     filtroTipo !== "all" ||
     fechaDesde ||
-    fechaHasta;
+    fechaHasta ||
+    filtroUsuario !== "";
 
   const clearFilters = () => {
     setFiltroProducto("all");
     setFiltroTipo("all");
     setFechaDesde(undefined);
     setFechaHasta(undefined);
+    if (setFiltroUsuario) setFiltroUsuario("");
   };
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <div className="relative w-full sm:w-48">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por usuario..."
+          className="pl-8"
+          value={filtroUsuario}
+          onChange={(e) => setFiltroUsuario?.(e.target.value)}
+        />
+      </div>
+
       <Select value={filtroProducto} onValueChange={setFiltroProducto}>
         <SelectTrigger className="w-full sm:w-52">
           <SelectValue placeholder="Producto" />

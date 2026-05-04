@@ -2,11 +2,15 @@
 export interface Categoria {
   id: string;
   nombre: string;
+  color?: string;
+  icono?: string;
 }
 
 export interface CategoriaReceta {
   id: string;
   nombre: string;
+  color?: string;
+  icono?: string;
 }
 
 export interface ProductoBodega {
@@ -47,4 +51,4 @@ export interface Receta {
   ingredientes: { id?: string; producto_id: string; bodega_id: string; cantidad: number }[];
 }
 
-export type ViewTab = "productos" | "recetas" | "compras";
+export type ViewTab = "productos" | "recetas" | "compras" | "mermas";

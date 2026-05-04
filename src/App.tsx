@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { BodegaProvider } from "./hooks/useBodega";
+import { AreaOperativaProvider } from "./hooks/useAreaOperativa";
 import { UndoRedoProvider } from "./hooks/useUndoRedo";
 import { Toaster } from "sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
@@ -12,6 +13,7 @@ import StockRegistro from "./pages/StockRegistro/index";
 import Consumo from "./pages/Consumo/index";
 import Gestion from "./pages/Gestion/index";
 import Analiticas from "./pages/Analiticas/index";
+import Actividades from "./pages/Actividades/index";
 import GestionarMerma from "./pages/GestionarMerma/index";
 import Informes from "./pages/Informes/index";
 import Proyeccion from "./pages/Proyeccion/index";
@@ -21,6 +23,7 @@ import Configuracion from "./pages/Configuracion/index";
 import Compras from "./pages/Compras/index";
 import ContarInventario from "./pages/ContarInventario/index";
 import Proveedores from "./pages/Proveedores/index";
+import ProfilePage from "./pages/Profile/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -43,30 +46,34 @@ function App() {
       <AuthProvider>
         <UndoRedoProvider>
           <BodegaProvider>
-            <TooltipProvider>
-              <Router>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
-                    <Route path="/" element={<StockRegistro />} />
-                    <Route path="/consumo" element={<Consumo />} />
-                    <Route path="/analiticas" element={<Analiticas />} />
-                    <Route path="/gestion" element={<Gestion />} />
-                    <Route path="/gestionar-merma" element={<GestionarMerma />} />
-                    <Route path="/informes" element={<Informes />} />
-                    <Route path="/proyeccion" element={<Proyeccion />} />
-                    <Route path="/historial" element={<Historial />} />
-                    <Route path="/eventos" element={<Eventos />} />
-                    <Route path="/configuracion" element={<Configuracion />} />
-                    <Route path="/compras" element={<Compras />} />
-                    <Route path="/proveedores" element={<Proveedores />} />
-                    <Route path="/contar-inventario" element={<ContarInventario />} />
-                  </Route>
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Router>
-              <Toaster position="top-right" richColors />
-            </TooltipProvider>
+            <AreaOperativaProvider>
+              <TooltipProvider>
+                <Router>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
+                      <Route path="/" element={<StockRegistro />} />
+                      <Route path="/consumo" element={<Consumo />} />
+                      <Route path="/alertas" element={<Analiticas />} />
+                      <Route path="/actividades" element={<Actividades />} />
+                      <Route path="/gestion" element={<Gestion />} />
+                      <Route path="/gestionar-merma" element={<GestionarMerma />} />
+                      <Route path="/informes" element={<Informes />} />
+                      <Route path="/proyeccion" element={<Proyeccion />} />
+                      <Route path="/historial" element={<Historial />} />
+                      <Route path="/eventos" element={<Eventos />} />
+                      <Route path="/configuracion" element={<Configuracion />} />
+                      <Route path="/compras" element={<Compras />} />
+                      <Route path="/proveedores" element={<Proveedores />} />
+                      <Route path="/contar-inventario" element={<ContarInventario />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Router>
+                <Toaster position="top-right" richColors />
+              </TooltipProvider>
+            </AreaOperativaProvider>
           </BodegaProvider>
         </UndoRedoProvider>
       </AuthProvider>

@@ -9,21 +9,26 @@ export function useGestion() {
   const [categoriasRecetas, setCategoriasRecetas] = useState<CategoriaReceta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [mermas, setMermas] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingProduct, setSavingProduct] = useState(false);
   const [savingReceta, setSavingReceta] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
-      const [catRes, prodRes, recRes] = await Promise.all([
+      // Usamos trailing slashes para mayor compatibilidad con el backend
+      const [catRes, prodRes, recRes, catRecRes, mermasRes] = await Promise.all([
         api.get("/inventory/categories"),
-        api.get("/inventory/products/"),
-        api.get("/operations/recipes"),
+        api.get("/inventory/products"),
+        api.get("/operations/recipes/"),
+        api.get("/operations/recipes/categories"),
+        api.get("/inventory/history/?tipo_movimiento=merma"),
       ]);
       setCategorias(catRes.data ?? []);
-      setCategoriasRecetas([]); // Will be empty until backend endpoint exists
+      setCategoriasRecetas(catRecRes.data ?? []);
       setProductos(prodRes.data ?? []);
       setRecetas(recRes.data ?? []);
+      setMermas(mermasRes.data ?? []);
     } catch (e) {
       console.error("Error loading data:", e);
       toast.error("Error al sincronizar catálogo");
@@ -67,7 +72,7 @@ export function useGestion() {
 
   const createCategoryReceta = async (nombre: string) => {
     try {
-      await api.post("/inventory/recipe-categories", { nombre });
+      await api.post("/operations/recipes/categories", { nombre });
       toast.success("Categoría de receta creada");
       loadData();
     } catch (e) {
@@ -77,7 +82,7 @@ export function useGestion() {
 
   const deleteCategoryReceta = async (id: string) => {
     try {
-      await api.delete(`/inventory/recipe-categories/${id}`);
+      await api.delete(`/operations/recipes/categories/${id}`);
       toast.success("Categoría de receta eliminada");
       loadData();
     } catch (e) {
@@ -177,6 +182,7 @@ export function useGestion() {
     categoriasRecetas,
     productos,
     recetas,
+    mermas,
     loading,
     savingProduct,
     savingReceta,

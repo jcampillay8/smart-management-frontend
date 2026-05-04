@@ -6,59 +6,98 @@ import {
   UtensilsCrossed, TrendingUp, History, 
   CalendarDays, ChevronLeft, ChevronRight, 
   Bell, BarChart3, AlertTriangle,
-  ShoppingCart, ClipboardCheck, X, Truck
+  X
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
+import api from "../lib/api";
+
+const API_URL = api.defaults.baseURL;
 
 const menuItems = [
-  { path: "/", label: "Inventario", icon: ClipboardList },
   { path: "/consumo", label: "Consumo", icon: UtensilsCrossed },
-  { path: "/compras", label: "Compras", icon: ShoppingCart },
-  { path: "/proveedores", label: "Proveedores", icon: Truck },
-  { path: "/contar-inventario", label: "Conteos", icon: ClipboardCheck },
-  { path: "/analiticas", label: "Novedades", icon: Bell },
-  { path: "/proyeccion", label: "Proyección", icon: TrendingUp },
-  { path: "/eventos", label: "Eventos", icon: CalendarDays },
+  { path: "/", label: "Inventario", icon: ClipboardList, exact: true },
   { path: "/gestion", label: "Gestión", icon: Boxes },
-  { path: "/gestionar-merma", label: "Mermas", icon: AlertTriangle },
+  { path: "/eventos", label: "Eventos", icon: CalendarDays },
+  { path: "/proyeccion", label: "Proyección", icon: TrendingUp },
   { path: "/historial", label: "Historial", icon: History },
-  { path: "/informes", label: "Informes", icon: BarChart3 },
+  { path: "/actividades", label: "Panel de actividades", icon: BarChart3 },
+  { path: "/alertas", label: "Alertas", icon: Bell, hasBadge: true },
 ];
 
 interface SidebarProps {
   logo: string | null;
+  name?: string;
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { user } = useAuth();
+
+  // Notif badge from localStorage
+  const [hasCritical, setHasCritical] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+
+  useEffect(() => {
+    const read = () => {
+      const count = parseInt(localStorage.getItem("notif_total_count") || "0", 10);
+      const critical = localStorage.getItem("notif_has_critical") === "true";
+      setNotifCount(count);
+      setHasCritical(critical);
+    };
+    read();
+    window.addEventListener("storage", read);
+    window.addEventListener("notif-updated", read);
+    return () => {
+      window.removeEventListener("storage", read);
+      window.removeEventListener("notif-updated", read);
+    };
+  }, []);
 
   // Close mobile menu when location changes
   useEffect(() => {
     if (onClose) onClose();
   }, [location.pathname]);
 
-  const visibleItems = menuItems;
+  // Derive initials and display name from user
+  const initials = user?.firstName
+    ? `${user.firstName[0]}${user.lastName?.[0] || ""}`.toUpperCase()
+    : user?.username?.slice(0, 2).toUpperCase() || "U";
+
+  const displayName = user?.firstName
+    ? `${user.firstName} ${user.lastName || ""}`.trim()
+    : user?.username || "Usuario";
 
   const sidebarContent = (
     <>
-      <div className="p-6 flex items-center justify-between">
+      <div className="p-6 flex items-center justify-between gap-2 min-w-0 border-b border-border/50">
         <AnimatePresence mode="wait">
           {(!isCollapsed || isOpen) && (
             <motion.div
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
-              className="flex items-center gap-3"
+              className="flex items-center gap-3 min-w-0 flex-1"
             >
-              <div className="h-9 w-9 bg-primary/10 rounded-xl flex items-center justify-center overflow-hidden border border-primary/20">
-                {logo ? <img src={logo} className="h-full w-full object-contain" /> : <Package className="h-5 w-5 text-primary" />}
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                {logo ? (
+                  <img 
+                    src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
+                    className="h-full w-full object-contain p-1" 
+                    alt="Logo" 
+                  />
+                ) : (
+                  <Package className="h-5 w-5 text-primary" />
+                )}
               </div>
-              <span className="font-bold text-lg tracking-tight">EasyStock</span>
+              <div className="flex flex-col min-w-0">
+                <span className="font-black text-[11px] leading-tight tracking-widest uppercase whitespace-pre-wrap break-words">
+                  {name || "SIOCI"}
+                </span>
+              </div>
             </motion.div>
           )}
           {isCollapsed && !isOpen && (
@@ -67,7 +106,17 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
               animate={{ opacity: 1 }}
               className="mx-auto"
             >
-              <Package className="h-7 w-7 text-primary" />
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shadow-sm">
+                {logo ? (
+                  <img 
+                    src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
+                    className="h-full w-full object-contain p-1" 
+                    alt="Logo" 
+                  />
+                ) : (
+                  <Package className="h-5 w-5 text-primary" />
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -75,7 +124,7 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
         {/* Toggle Button for Desktop */}
         <button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex h-7 w-7 rounded-lg hover:bg-secondary items-center justify-center transition-colors border border-transparent hover:border-border"
+          className="hidden md:flex h-7 w-7 rounded-lg hover:bg-secondary items-center justify-center transition-colors border border-transparent hover:border-border shrink-0 ml-2"
         >
           {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -90,8 +139,11 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 px-3 space-y-1 mt-2 overflow-y-auto custom-scrollbar">
-        {visibleItems.map((item) => {
-          const isActive = location.pathname === item.path;
+        {menuItems.map((item) => {
+          const isActive = item.exact
+            ? location.pathname === item.path
+            : location.pathname === item.path || location.pathname.startsWith(item.path + "/");
+          const showBadge = item.hasBadge && notifCount > 0;
           return (
             <Link
               key={item.path}
@@ -103,16 +155,27 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
                   : "hover:bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon size={20} className={cn(
-                "shrink-0",
-                isActive ? "text-primary-foreground" : "group-hover:text-primary transition-colors"
-              )} />
+              <div className="relative shrink-0">
+                <item.icon size={20} className={cn(
+                  isActive ? "text-primary-foreground" : "group-hover:text-primary transition-colors"
+                )} />
+                {showBadge && (
+                  <span className={cn(
+                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold border-2 border-background px-0.5",
+                    hasCritical
+                      ? "bg-destructive text-destructive-foreground animate-pulse"
+                      : "bg-amber-500 text-white"
+                  )}>
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </div>
               
               {(!isCollapsed || isOpen) && (
                 <motion.span
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="font-medium text-sm whitespace-nowrap"
+                  className="font-medium text-sm whitespace-nowrap flex-1"
                 >
                   {item.label}
                 </motion.span>
@@ -129,18 +192,13 @@ export default function Sidebar({ logo, isOpen, onClose }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border mt-auto bg-background/50">
-          <div className="flex items-center gap-3 px-2">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-bold text-primary">
-                  AD
-              </div>
-              {(!isCollapsed || isOpen) && (
-                  <div className="flex flex-col min-w-0">
-                      <span className="text-xs font-bold truncate">Admin</span>
-                      <span className="text-[10px] text-muted-foreground truncate">EasyStock v1.0</span>
-                  </div>
-              )}
+      <div className="p-4 border-t border-border mt-auto bg-background/50 flex flex-col gap-2">
+        {(!isCollapsed || isOpen) && (
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">EasyStock v1.0</span>
+            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           </div>
+        )}
       </div>
     </>
   );

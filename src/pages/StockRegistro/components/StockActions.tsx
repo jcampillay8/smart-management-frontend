@@ -3,23 +3,23 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
 import { 
-  PackagePlus, 
   ArrowLeftRight, 
   AlertTriangle, 
   Search,
   Settings2,
-  Plus
+  Truck
 } from "lucide-react";
 import { Input } from "../../../components/ui/input";
-import { cn } from "../../../lib/utils";
+import BodegaSelector from "../../../components/BodegaSelector";
+import { AreaSelector } from "../../../components/AreaSelector";
 
 interface StockActionsProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onOpenTransfer: () => void;
   onOpenMerma: () => void;
-  onOpenAdjustment: () => void; // NUEVO prop
-  isViewingAll: boolean;
+  onOpenAdjustment: () => void;
+  onOpenAddingMenu: (mode: "pedidos" | "libre" | "barcode" | "factura") => void;
 }
 
 export function StockActions({
@@ -28,71 +28,77 @@ export function StockActions({
   onOpenTransfer,
   onOpenMerma,
   onOpenAdjustment,
-  isViewingAll
+  onOpenAddingMenu,
 }: StockActionsProps) {
-  const navigate = useNavigate();
-
   return (
-    <div className="flex flex-col xl:flex-row gap-4 items-center justify-between bg-card backdrop-blur-md p-4 rounded-2xl border border-input shadow-xl">
-      
-      {/* Buscador de alta visibilidad */}
-      <div className="relative w-full xl:w-[450px] group">
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg bg-primary/10 transition-colors group-focus-within:bg-primary/20">
-          <Search className="h-4 w-4 text-primary" />
-        </div>
-        <Input
-          placeholder="Filtrar por nombre de producto / categoria..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-12 h-12 bg-background border-input rounded-xl text-sm font-medium transition-all focus:ring-primary/20"
-        />
-      </div>
-
-      {/* Grupo de Acciones Rápidas */}
-      <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto justify-end">
+    <div className="space-y-4">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-card backdrop-blur-md p-4 rounded-2xl border border-input shadow-xl">
         
-        {/* Entrada de Stock (Redirección) */}
-        <Button 
-          variant="outline" 
-          onClick={() => navigate("/compras")}
-          className="h-11 px-5 gap-2.5 rounded-xl border-input hover:bg-primary/10 hover:text-primary transition-all active:scale-95"
-        >
-          <Plus className="h-4 w-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Entrada</span>
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 w-full">
+          {/* Selectores de Área y Bodega Integrados */}
+          <div className="flex items-center gap-2 w-full sm:w-auto bg-muted/50 p-1.5 rounded-xl border border-input shadow-inner shrink-0">
+            <AreaSelector />
+            <BodegaSelector />
+          </div>
 
-        {/* Transferencia */}
-        <Button 
-          variant="outline" 
-          onClick={onOpenTransfer}
-          className="h-11 px-5 gap-2.5 rounded-xl border-input hover:bg-blue-500/10 hover:text-blue-400 transition-all active:scale-95"
-        >
-          <ArrowLeftRight className="h-4 w-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Mover</span>
-        </Button>
+          <div className="hidden sm:block w-[1px] h-8 bg-border mx-1" />
 
-        {/* Ajuste Manual (NUEVO) */}
-        <Button 
-          variant="outline" 
-          onClick={onOpenAdjustment}
-          className="h-11 px-5 gap-2.5 rounded-xl border-input hover:bg-amber-500/10 hover:text-amber-400 transition-all active:scale-95"
-        >
-          <Settings2 className="h-4 w-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Ajustar</span>
-        </Button>
+          {/* Buscador de alta visibilidad (Solo PC/Tablet en este contenedor) */}
+          <div className="hidden md:relative md:flex md:flex-1 group max-w-md">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-lg bg-primary/10 transition-colors group-focus-within:bg-primary/20">
+              <Search className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <Input
+              placeholder="Buscar productos..."
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10 h-10 bg-background border-input rounded-xl text-sm font-medium transition-all focus:ring-primary/20 w-full"
+            />
+          </div>
+        </div>
 
-        <div className="hidden sm:block w-[1px] h-8 bg-border mx-1" />
+        {/* Grupo de Acciones (Ahora a la derecha) */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Recibir */}
+          <Button 
+            onClick={() => onOpenAddingMenu("pedidos")}
+            className="h-10 px-4 gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/10 transition-all active:scale-95 flex-1 sm:flex-none"
+          >
+            <Truck className="h-4 w-4" />
+            <span className="text-[9px] font-black uppercase tracking-wider">Recibir</span>
+          </Button>
 
-        {/* Merma (Destructivo) */}
-        <Button 
-          variant="destructive" 
-          onClick={onOpenMerma}
-          className="h-11 px-5 gap-2.5 rounded-xl shadow-lg shadow-destructive/10 transition-all hover:brightness-110 active:scale-95"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          <span className="text-[10px] font-black uppercase tracking-widest">Merma</span>
-        </Button>
+          {/* Mover */}
+          <Button 
+            variant="outline" 
+            onClick={onOpenTransfer}
+            className="h-10 px-4 gap-2 rounded-xl border-input hover:bg-blue-500/10 hover:text-blue-400 transition-all active:scale-95 flex-1 sm:flex-none"
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            <span className="text-[9px] font-black uppercase tracking-wider">Mover</span>
+          </Button>
+
+          {/* Ajustar */}
+          <Button 
+            variant="outline" 
+            onClick={onOpenAdjustment}
+            className="h-10 px-4 gap-2 rounded-xl border-input hover:bg-amber-500/10 hover:text-amber-400 transition-all active:scale-95 flex-1 sm:flex-none"
+          >
+            <Settings2 className="h-4 w-4" />
+            <span className="text-[9px] font-black uppercase tracking-wider">Ajustar</span>
+          </Button>
+
+          {/* Merma */}
+          <Button 
+            variant="destructive" 
+            onClick={onOpenMerma}
+            className="h-10 px-4 gap-2 rounded-xl shadow-lg shadow-destructive/10 transition-all hover:brightness-110 active:scale-95 flex-1 sm:flex-none"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-[9px] font-black uppercase tracking-wider">Merma</span>
+          </Button>
+        </div>
       </div>
     </div>
   );
-}
+}

@@ -9,6 +9,7 @@ export function useEventos() {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [recetas, setRecetas] = useState<Receta[]>([]);
+  const [stocks, setStocks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async () => {
@@ -51,6 +52,14 @@ export function useEventos() {
         setRecetas(rRes.data || []);
       } catch (e) {
         console.error("Failed to load recipes:", e);
+      }
+
+      // Load current stocks
+      try {
+        const stockRes = await api.get("/inventory/product-bodega");
+        setStocks(stockRes.data || []);
+      } catch (e) {
+        console.error("Failed to load stocks:", e);
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -162,6 +171,7 @@ export function useEventos() {
     prodName,
     prodUnit,
     prodCost,
-    getEventCost
+    getEventCost,
+    stocks
   };
 }

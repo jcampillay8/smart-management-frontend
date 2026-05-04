@@ -2,11 +2,36 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Proveedor } from "./types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../components/ui/dialog";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Building2 } from "lucide-react";
+
+const formatRut = (value: string): string => {
+  // 1. Eliminar todo lo que no sea número o K/k
+  let cleaned = value.replace(/[^0-9kK]/g, '');
+  
+  // 2. Si está vacío, retornar vacío
+  if (!cleaned) return "";
+
+  // 3. Separar el último carácter (DV) y el resto (cuerpo)
+  // La K solo puede estar en el último carácter
+  let body = cleaned.slice(0, -1).replace(/[kK]/g, '');
+  let dv = cleaned.slice(-1).toUpperCase();
+
+  // 4. Si el cuerpo tiene más de 8 dígitos, truncar (máximo 99.999.999)
+  if (body.length > 8) {
+    body = body.slice(0, 8);
+  }
+
+  // 5. Re-ensamblar con guion si hay suficientes caracteres
+  if (body.length > 0) {
+    return `${body}-${dv}`;
+  }
+  
+  return dv;
+};
 
 interface Props {
   open: boolean;
@@ -53,6 +78,10 @@ export function ProveedorDialog({ open, onOpenChange, editingProveedor, onSave, 
       toast.error("Correo electrónico no válido");
       return;
     }
+    if (rut.trim() && !/^\d{7,8}-[0-9K]$/.test(rut.trim())) {
+      toast.error("RUT no válido. Formato: 12345678-9 (sin puntos, 7 u 8 dígitos antes del guion)");
+      return;
+    }
 
     await onSave({
       nombre_empresa: nombreEmpresa.trim(),
@@ -73,6 +102,9 @@ export function ProveedorDialog({ open, onOpenChange, editingProveedor, onSave, 
             <Building2 className="h-5 w-5 text-primary" />
             {editingProveedor ? "Editar proveedor" : "Nuevo proveedor"}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Complete los datos del proveedor a continuación.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 pt-2">
           <div className="space-y-1">
@@ -87,8 +119,8 @@ export function ProveedorDialog({ open, onOpenChange, editingProveedor, onSave, 
             <Label>RUT</Label>
             <Input
               value={rut}
-              onChange={(e) => setRut(e.target.value)}
-              placeholder="76.123.456-7"
+              onChange={(e) => setRut(formatRut(e.target.value))}
+              placeholder="76123456-7"
             />
           </div>
           <div className="space-y-1">

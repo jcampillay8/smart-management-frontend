@@ -8,7 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Trash2, Sparkles, ListChecks, Search, AlertTriangle, Calendar as CalIcon, Download, ChevronLeft } from "lucide-react";
+import { Plus, Trash2, Sparkles, ListChecks, Search, AlertTriangle, Calendar as CalIcon, Download, ChevronLeft, Mail } from "lucide-react";
+import { buildMailto, interpolateTemplate, EmailVariables } from "../lib/email-templates";
+import { NotasMenciones } from "./NotasMenciones";
 import { toast } from "sonner";
 import BodegaBadge from "@/components/BodegaBadge";
 import { cn } from "@/lib/utils";
@@ -35,11 +37,19 @@ interface CompraDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved?: () => void;
+  editingCompra?: any;
+}
+
+interface EmailTemplate {
+  id: string;
+  nombre: string;
+  asunto: string;
+  cuerpo: string;
 }
 
 type Step = "mode" | "manual" | "suggest_bodegas" | "suggest_review" | "review";
 
-export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDialogProps) {
+export default function CompraDialog({ open, onOpenChange, onSaved, editingCompra }: CompraDialogProps) {
   const { user } = useAuth();
   const { bodegas } = useBodega();
   const [step, setStep] = useState<Step>("mode");
@@ -50,6 +60,9 @@ export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDial
   const [notas, setNotas] = useState("");
   const [saving, setSaving] = useState(false);
   const [selBodegas, setSelBodegas] = useState<Set<string>>(new Set());
+  const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -60,8 +73,22 @@ export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDial
       setNotas("");
       setSelBodegas(new Set(bodegas.map(b => b.id)));
       loadProds();
+      loadData();
     }
   }, [open]);
+
+  const loadData = async () => {
+    try {
+      const [tRes, uRes] = await Promise.all([
+        api.get("/purchases/email-templates/"),
+        api.get("/settings/users")
+      ]);
+      setTemplates(tRes.data || []);
+      setUsers(uRes.data || []);
+    } catch (e) {
+      console.error("Error loading dialog data", e);
+    }
+  };
 
   const loadProds = async () => {
     try {
@@ -108,8 +135,8 @@ export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDial
     setLoadingSuggest(true);
     try {
       const [regsRes, pbRes, evRes] = await Promise.all([
-        api.get("/operations/history"), // Need to check if this exists or use a similar endpoint
-        api.get("/inventory/product-bodega"), // Need to check if this exists
+        api.get("/operations/history"),
+        api.get("/inventory/product-bodega"),
         api.get("/operations/events"),
       ]);
       const records = (regsRes.data ?? []) as any[];
@@ -249,6 +276,33 @@ export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDial
     }
   };
 
+  const handleSendEmail = () => {
+    if (!selectedTemplate) {
+      toast.error("Selecciona una plantilla de email");
+      return;
+    }
+    const template = templates.find(t => t.id === selectedTemplate);
+    if (!template) return;
+
+    const itemsSummary = items.map(it => `- ${it.producto_nombre}: ${it.cantidad} ${it.unidad}`).join("\n");
+    
+    const restName = document.querySelector('[title="EasyStock"]')?.textContent || "EasyStock";
+
+    const vars: EmailVariables = {
+      restaurante_nombre: restName,
+      proveedor_nombre: proveedor || "Proveedor",
+      compra_id: "NUEVA",
+      total: formatMoney(total),
+      items_resumen: itemsSummary
+    };
+
+    const subject = interpolateTemplate(template.asunto, vars);
+    const body = interpolateTemplate(template.cuerpo, vars);
+    
+    const mailto = buildMailto(subject, body);
+    window.open(mailto, "_blank");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -318,7 +372,7 @@ export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDial
                   <Checkbox checked={selBodegas.has(b.id)} onCheckedChange={(v) => {
                     setSelBodegas(prev => { const n = new Set(prev); if (v) n.add(b.id); else n.delete(b.id); return n; });
                   }} />
-                  <BodegaBadge nombre={b.nombre} />
+                  <BodegaBadge nombre={b.nombre} color={(b as any).color} icono={(b as any).icono} />
                 </label>
               ))}
             </div>
@@ -350,6 +404,36 @@ export default function CompraDialog({ open, onOpenChange, onSaved }: CompraDial
               <Input value={notas} onChange={e => setNotas(e.target.value)} placeholder="Comentarios..." />
             </div>
             <ItemsList items={items} bodegas={bodegas} updateItem={updateItem} removeItem={removeItem} total={total} showMotivo />
+            
+            <div className="space-y-1 pt-2 border-t">
+              <Label className="text-xs">Enviar pedido por Correo (Opcional)</Label>
+              <div className="flex gap-2">
+                <Select value={selectedTemplate || ""} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Seleccionar plantilla..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map(t => (
+                      <SelectItem key={t.id} value={t.id}>{t.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" onClick={handleSendEmail} disabled={!selectedTemplate} className="gap-1">
+                  <Mail className="h-4 w-4" /> Enviar
+                </Button>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t">
+               <NotasMenciones 
+                  notas={(editingCompra as any)?.notas || []} 
+                  usuarios={users.map(u => ({ id: u.guid, nombre: u.username, avatar_url: u.avatar_url }))}
+                  onAddNota={(content) => {
+                    toast.info("Nota registrada (Local): " + content);
+                  }}
+               />
+            </div>
+
             <div className="flex flex-wrap gap-2 border-t pt-3">
               <Button variant="outline" size="sm" onClick={downloadCSV} className="gap-1"><Download className="h-3.5 w-3.5" /> Descargar</Button>
               <Button variant="outline" size="sm" onClick={shareList} className="gap-1">Compartir</Button>
@@ -409,7 +493,11 @@ function ItemsList({ items, bodegas, updateItem, removeItem, total, showMotivo }
           </div>
           {it.bodega_id && (
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <BodegaBadge nombre={bodegas.find(b => b.id === it.bodega_id)?.nombre ?? ""} />
+              <BodegaBadge 
+                nombre={bodegas.find(b => b.id === it.bodega_id)?.nombre ?? ""} 
+                color={(bodegas.find(b => b.id === it.bodega_id) as any)?.color} 
+                icono={(bodegas.find(b => b.id === it.bodega_id) as any)?.icono} 
+              />
               <span>Subtotal: <strong className="text-foreground">{formatMoney((Number(it.cantidad) || 0) * (Number(it.precio_unitario) || 0))}</strong></span>
             </div>
           )}

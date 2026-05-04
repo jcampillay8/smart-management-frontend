@@ -2,86 +2,126 @@
 import { useState } from "react";
 import api from "../../lib/api";
 import { toast } from "sonner";
-import { History } from "lucide-react";
+import { History, Eye, ChevronDown, Layers } from "lucide-react";
 import { useBodega } from "../../hooks/useBodega";
+import { useAreaOperativa } from "../../hooks/useAreaOperativa";
+import { useAuth } from "../../hooks/useAuth";
 import BodegaSelector from "../../components/BodegaSelector";
 import { useConsumo } from "./useConsumo";
 import { ConsumoCatalog } from "./ConsumoCatalog";
 import { ConsumoCart } from "./ConsumoCart";
 import { ConsumoLog } from "./ConsumoLog";
+import { ConsumoEditDialog } from "./ConsumoEditDialog";
+import { ConsumptionRecord } from "./types";
+import { Button } from "../../components/ui/button";
+import { Dialog, DialogContent } from "../../components/ui/dialog";
+import { cn } from "../../lib/utils";
+import { useUndoRedo } from "../../hooks/useUndoRedo";
+import { Undo2, Redo2 } from "lucide-react";
 
+import { AreaSelector } from "../../components/AreaSelector";
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function Consumo() {
   const { selectedBodegaId, bodegas } = useBodega();
+  const { selectedArea } = useAreaOperativa();
+  const { isAdmin } = useAuth();
+
   const { 
     productos, categorias, recetas, cart, loading, saving, 
     setSaving, setCart, addToCart, removeFromCart, updateQuantity,
-    getStock, groupedProducts, consumptionLog, refreshLog
-  } = useConsumo(selectedBodegaId === "all" ? "all" : selectedBodegaId);
+    getStock, groupedProducts, consumptionLog, refreshLog,
+    updateConsumo, deleteConsumo
+  } = useConsumo(
+    selectedBodegaId === "all" ? "all" : selectedBodegaId,
+    selectedArea?.id ?? null
+  );
   
   const [busqueda, setBusqueda] = useState("");
+  const [viewMode, setViewMode] = useState<"productos" | "recetas">("productos");
+  const [editRecord, setEditRecord] = useState<ConsumptionRecord | null>(null);
+  const [showLogMobile, setShowLogMobile] = useState(false);
+  const { undo, redo } = useUndoRedo();
+
+  const handleUndo = async () => {
+    if (confirm("¿Estás seguro de deshacer el último movimiento? Esto revertirá el stock de los productos involucrados.")) {
+      await undo();
+      refreshLog();
+    }
+  };
+
+  const handleRedo = async () => {
+    await redo();
+    refreshLog();
+  };
 
   const filteredProds = productos.filter(p => 
     p.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
-  const filteredRecs = recetas.filter(r => 
-    r.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
 
   const handleConsumoSubmit = async () => {
     if (cart.length === 0) return;
+
+    // For non-admins, must have an area with a bodega_consumo set
+    const areaId = selectedArea?.id;
+    const bodegaConsumoId = selectedArea?.bodega_consumo_id
+      ?? (selectedBodegaId !== "all" ? selectedBodegaId : bodegas[0]?.id);
+
+    if (!bodegaConsumoId) {
+      toast.error("No hay bodega de consumo configurada");
+      return;
+    }
+
+    if (!areaId && cart.some(i => i.type === "receta")) {
+      toast.error("Selecciona un Área Operativa para consumir recetas");
+      return;
+    }
+
     setSaving(true);
     try {
-      const movements: any[] = [];
       const today = new Date().toISOString().split("T")[0];
 
-      for (const item of cart) {
-        if (item.type === "producto") {
-          const stock = getStock(item.id);
-          if (item.quantity > stock) {
-            toast.error(`Stock insuficiente para ${item.name} (disponible: ${stock})`);
-            setSaving(false);
-            return;
-          }
-          movements.push({
-            producto_id: item.id,
-            cantidad: item.quantity,
-            tipo_movimiento: "consumo",
-            bodega_id: selectedBodegaId === "all" ? bodegas[0]?.id : selectedBodegaId,
-            fecha_recuento: today
-          });
-        } else {
-          const receta = recetas.find(r => r.id === item.id);
-          if (receta?.ingredientes) {
-            for (const ing of receta.ingredientes) {
-              const ingStock = getStock(ing.producto_id);
-              const needed = ing.cantidad * item.quantity;
-              if (needed > ingStock) {
-                toast.error(`Stock insuficiente para ingrediente de ${item.name}`);
-                setSaving(false);
-                return;
-              }
-            }
-            receta.ingredientes.forEach(ing => {
-              movements.push({
-                producto_id: ing.producto_id,
-                cantidad: ing.cantidad * item.quantity,
-                tipo_movimiento: "consumo",
-                bodega_id: ing.bodega_id,
-                fecha_recuento: today
-              });
-            });
-          }
+      // We process one by one or in bulk where possible. 
+      // Current backend only has bulk for products. Recipes are individual.
+      
+      const productMovements = cart.filter(i => i.type === "producto").map(item => {
+        const stock = getStock(item.id);
+        if (item.quantity > stock) {
+          throw new Error(`Stock insuficiente para ${item.name}`);
         }
+        return {
+          producto_id: item.id,
+          cantidad: item.quantity,
+          tipo_movimiento: "consumo",
+          bodega_id: bodegaConsumoId,
+          fecha_recuento: today,
+        };
+      });
+
+      // 1. Bulk products
+      if (productMovements.length > 0) {
+        await api.post("/inventory/stock/bulk-movements", { movements: productMovements });
       }
 
-      await api.post("/inventory/stock/bulk-movements", { movements });
+      // 2. Individual recipes (sequential for safety, or Promise.all)
+      const recipeItems = cart.filter(i => i.type === "receta");
+      for (const r of recipeItems) {
+        await api.post(`/operations/recipes/${r.id}/consume?area_id=${areaId}&cantidad=${r.quantity}`);
+      }
+
       toast.success("Consumo registrado");
       setCart([]);
       refreshLog();
     } catch (e: any) {
-      toast.error(e.message || "Error al registrar consumo");
+      toast.error(e.response?.data?.detail || e.message || "Error al registrar consumo");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (record: ConsumptionRecord) => {
+    if (confirm("¿Estás seguro de eliminar este registro? El stock se devolverá.")) {
+      await deleteConsumo(record.id);
     }
   };
 
@@ -92,42 +132,129 @@ export default function Consumo() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <History className="h-5 w-5 text-primary" /> Registro de Consumo
-        </h1>
-      </div>
+    <div className="space-y-6 pb-10">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center justify-between w-full">
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black tracking-tighter">Registro de Consumos</h1>
+            <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+              Preparaciones y uso de insumos
+            </p>
+          </div>
+          {/* BOTÓN HISTORIAL PC/TABLET (Alineado a la derecha) */}
+          <Button 
+            variant="outline" 
+            className="hidden md:flex gap-2 h-10 px-4 rounded-xl border-border/50 hover:bg-secondary transition-all font-bold text-xs shadow-sm" 
+            onClick={() => setShowLogMobile(true)}
+          >
+            <History className="h-4 w-4" /> Ver Historial
+          </Button>
+        </div>
+      </header>
 
-      <BodegaSelector />
+      {/* Selectores y Toggle Row */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <AreaSelector />
+          <BodegaSelector />
+          
+          {/* Toggle PC/Tablet: A continuación del selector de bodegas */}
+          <div className="hidden md:flex items-center rounded-xl bg-secondary/30 p-1 border border-border/50">
+            <button
+              onClick={() => setViewMode("productos")}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === "productos" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Productos
+            </button>
+            <button
+              onClick={() => setViewMode("recetas")}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === "recetas" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Recetas
+            </button>
+          </div>
+        </div>
+
+        {/* LAYOUT MÓVIL: Toggle y Historial debajo de los selectores */}
+        <div className="flex md:hidden items-center justify-between w-full gap-3">
+          <div className="flex items-center rounded-xl bg-secondary/30 p-1 border border-border/50 flex-1">
+            <button
+              onClick={() => setViewMode("productos")}
+              className={cn(
+                "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === "productos" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground"
+              )}
+            >
+              Productos
+            </button>
+            <button
+              onClick={() => setViewMode("recetas")}
+              className={cn(
+                "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === "recetas" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground"
+              )}
+            >
+              Recetas
+            </button>
+          </div>
+          <Button 
+            variant="outline" 
+            className="gap-2 h-11 px-4 rounded-xl border-border/50 font-bold text-xs" 
+            onClick={() => setShowLogMobile(true)}
+          >
+            <History className="h-4 w-4" /> Historial
+          </Button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <ConsumoCatalog 
           busqueda={busqueda}
           onBusquedaChange={setBusqueda}
-          productos={filteredProds}
-          recetas={filteredRecs}
+          productos={viewMode === "productos" ? filteredProds : []}
+          recetas={viewMode === "recetas" ? recetas : []}
           categorias={categorias}
           groupedProducts={groupedProducts}
           onAdd={addToCart}
           getStock={getStock}
+          viewMode={viewMode}
         />
         
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
           <ConsumoCart 
             cart={cart}
             saving={saving}
             onUpdateQty={updateQuantity}
             onRemove={removeFromCart}
             onSubmit={handleConsumoSubmit}
+            getStock={getStock}
           />
         </div>
-
-        <ConsumoLog 
-          records={consumptionLog}
-          onRefresh={refreshLog}
-        />
       </div>
+
+      <Dialog open={showLogMobile} onOpenChange={setShowLogMobile}>
+        <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden bg-transparent border-0">
+          <ConsumoLog 
+            records={consumptionLog}
+            onRefresh={refreshLog}
+            onEdit={(r) => { setEditRecord(r); setShowLogMobile(false); }}
+            onDelete={handleDelete}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <ConsumoEditDialog
+        open={!!editRecord}
+        onOpenChange={(v) => !v && setEditRecord(null)}
+        record={editRecord}
+        onSave={updateConsumo}
+      />
     </div>
   );
 }

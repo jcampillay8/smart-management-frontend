@@ -5,6 +5,8 @@ import { useProyeccion } from "./useProyeccion";
 import { GraficoProyeccion } from "./GraficoProyeccion";
 import { EventosImpacto } from "./EventosImpacto";
 import { Input } from "../../components/ui/input";
+import { AreaSelector } from "../../components/AreaSelector";
+import BodegaSelector from "../../components/BodegaSelector";
 
 export default function ProyeccionPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -13,16 +15,20 @@ export default function ProyeccionPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <TrendingUp className="h-6 w-6 text-indigo-500" /> Proyección de Disponibilidad
-        </h1>
-        <p className="text-sm text-muted-foreground">Simulación de quiebre de stock basada en eventos próximos.</p>
+      <header className="space-y-1 px-2 mb-2">
+        <h1 className="text-4xl font-black tracking-tighter">Proyección</h1>
+        <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
+          Simulación de Disponibilidad de Stock
+        </p>
       </header>
 
       <div className="grid lg:grid-cols-4 gap-6">
         {/* Panel Lateral de Búsqueda */}
         <aside className="lg:col-span-1 space-y-4">
+          <div className="space-y-2">
+            <AreaSelector />
+            <BodegaSelector />
+          </div>
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar insumo..." className="pl-9" />

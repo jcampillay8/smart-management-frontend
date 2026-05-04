@@ -15,17 +15,17 @@ export interface Producto {
   categoria?: Categoria;
 }
 
+export interface RecetaIngrediente {
+  producto_id: string;
+  cantidad: number;
+  bodega_id: string;
+}
+
 export interface Receta {
   id: string;
   nombre: string;
   precio: number;
   ingredientes: RecetaIngrediente[];
-}
-
-export interface RecetaIngrediente {
-  producto_id: string;
-  cantidad: number;
-  bodega_id: string;
 }
 
 export interface CartItem {
@@ -45,26 +45,16 @@ export interface ConsumptionRecord {
   id: string;
   producto_id: string;
   cantidad: number;
+  cantidad_anterior?: number;
   tipo_movimiento: string;
   bodega_id: string;
   created_at: string;
   fecha_vencimiento?: string;
   nombre_producto?: string;
+  nombre_receta?: string;
   nombre_bodega?: string;
   user_display_name?: string;
-}
-
-export interface Receta {
-  id: string;
-  nombre: string;
-  precio: number;
-  ingredientes: { producto_id: string; cantidad: number; bodega_id: string }[];
-}
-
-export interface CartItem {
-  id: string;
-  type: "producto" | "receta";
-  quantity: number;
-  name: string;
-  unit?: string;
+  receta_consumo_id?: string;
+  receta_id?: string;
+  motivo_merma?: string;
 }

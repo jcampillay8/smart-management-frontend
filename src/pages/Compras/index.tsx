@@ -10,6 +10,9 @@ import { CompraDetailDialog } from "./CompraDetailDialog";
 import CompraDialog from "../../components/CompraDialog";
 import { SubTab, Compra, ConfirmAction, ConfirmInfo } from "./types";
 
+import { IncidenciaDialog } from "./IncidenciaDialog";
+import { MercaderiaReceptionDialog } from "./MercaderiaReceptionDialog";
+
 export default function Compras() {
   const { isAdmin } = useAuth();
   const { 
@@ -23,6 +26,8 @@ export default function Compras() {
   const [compraDialog, setCompraDialog] = useState(false);
   const [editingCompra, setEditingCompra] = useState<Compra | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+  const [incidenciaTarget, setIncidenciaTarget] = useState<Compra | null>(null);
+  const [receptionTarget, setReceptionTarget] = useState<Compra | null>(null);
 
   const filtered = compras.filter(c => c.estado === subTab);
 
@@ -51,8 +56,8 @@ export default function Compras() {
     },
     ingresar: {
       title: "¿Ingresar mercadería?",
-      description: "Esto moverá la compra a la sección 'Recibidas' y actualizará el stock.",
-      actionLabel: "Sí, ingresar",
+      description: "Se abrirá el asistente de recepción para verificar los productos.",
+      actionLabel: "Sí, abrir asistente",
     },
   };
 
@@ -63,14 +68,11 @@ export default function Compras() {
     if (kind === "cancel") await cancelCompra(id);
     if (kind === "restore") await restoreCompra(id);
     if (kind === "pedido") await markPedido(id);
-    if (kind === "ingresar") await receiveCompra(id);
+    if (kind === "ingresar") {
+      const comp = compras.find(c => c.id === id);
+      if (comp) setReceptionTarget(comp);
+    }
     setConfirmAction(null);
-  };
-
-  const getStatusIcon = (estado: string, pedido: boolean) => {
-    if (estado === "realizada") return <CheckCircle2 className="h-4 w-4 text-emerald-500" />;
-    if (estado === "pendientes" && pedido) return <Truck className="h-4 w-4 text-purple-500" />;
-    return <Clock className="h-4 w-4 text-amber-500" />;
   };
 
   if (loading) return (
@@ -127,6 +129,8 @@ export default function Compras() {
             const text = `Compra ${c.fecha}\nProveedor: ${c.proveedor || "N/A"}\nTotal: $${c.total}`;
             navigator.clipboard.writeText(text);
           }}
+          onDelete={isAdmin ? deleteCompra : undefined}
+          onIncidencia={setIncidenciaTarget}
         />
       </div>
 
@@ -165,6 +169,32 @@ export default function Compras() {
           </div>
         </div>
       )}
+
+      {/* Incidencia Dialog */}
+      {incidenciaTarget && (
+        <IncidenciaDialog
+          open={!!incidenciaTarget}
+          onOpenChange={(open) => !open && setIncidenciaTarget(null)}
+          compraId={incidenciaTarget.id}
+          proveedorEmail={""} // Se podría traer del listado de proveedores si se vinculara por ID
+          proveedorNombre={incidenciaTarget.proveedor || ""}
+          total={incidenciaTarget.total}
+          onResolved={() => {
+            loadAll();
+          }}
+        />
+      )}
+
+      {/* Mercaderia Reception Dialog */}
+      <MercaderiaReceptionDialog
+        open={!!receptionTarget}
+        onOpenChange={(open) => !open && setReceptionTarget(null)}
+        compra={receptionTarget}
+        onSuccess={() => {
+          loadAll();
+          setReceptionTarget(null);
+        }}
+      />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { useBodega } from "../../hooks/useBodega";
 import { format } from "date-fns";
+import { buildInventorySnapshot } from "../../lib/inventory";
 
 const MOTIVOS = [
   { value: "vencimiento", label: "Vencimiento" },
