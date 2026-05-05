@@ -184,53 +184,29 @@ export default function GestionPage() {
 
       {/* Tabs */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center rounded-lg bg-secondary p-1 gap-1">
+        <div className="grid grid-cols-2 md:flex items-center rounded-xl bg-secondary/30 p-1 gap-1.5 border border-border/50 shadow-inner w-full md:w-auto">
           {[
-            { key: "productos" as ViewTab, label: "Productos", icon: Package },
-            { key: "recetas" as ViewTab, label: "Recetas", icon: CookingPot },
-            { key: "compras" as ViewTab, label: "Compras", icon: ShoppingCart },
-          ].map((tab) => (
+            { key: "productos", label: "Productos", icon: Package, activeColor: "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20", hoverColor: "hover:text-yellow-500" },
+            { key: "recetas", label: "Recetas", icon: CookingPot, activeColor: "bg-purple-500 text-white shadow-lg shadow-purple-500/20", hoverColor: "hover:text-purple-500" },
+            { key: "compras", label: "Compras", icon: ShoppingCart, activeColor: "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20", hoverColor: "hover:text-emerald-500" },
+            { key: "mermas", label: "Mermas", icon: AlertTriangle, activeColor: "bg-red-500 text-white shadow-lg shadow-red-500/20", hoverColor: "hover:text-red-500" },
+          ].map(tab => (
             <button
               key={tab.key}
-              onClick={() => setViewTab(tab.key)}
+              onClick={() => setViewTab(tab.key as any)}
               className={cn(
-                "flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+                "flex items-center justify-center md:justify-start gap-2 rounded-lg px-3 md:px-4 py-2 text-[10px] font-black transition-all duration-300 uppercase tracking-widest min-h-[40px]",
                 viewTab === tab.key
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
+                  ? cn(tab.activeColor, "scale-[1.02] md:scale-105")
+                  : cn("text-muted-foreground", tab.hoverColor, "hover:bg-background/80")
               )}
             >
-              <tab.icon className="h-3.5 w-3.5" />
+              <tab.icon className="h-4 w-4" />
               {tab.label}
             </button>
           ))}
         </div>
-        <div className="flex-1 flex justify-center">
-  <div className="grid grid-cols-2 md:flex items-center rounded-xl bg-secondary/30 p-1 gap-1.5 border border-border/50 shadow-inner w-full md:w-auto">
-    {[
-      { key: "productos", label: "Productos", icon: Package, activeColor: "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20", hoverColor: "hover:text-yellow-500" },
-      { key: "recetas", label: "Recetas", icon: CookingPot, activeColor: "bg-purple-500 text-white shadow-lg shadow-purple-500/20", hoverColor: "hover:text-purple-500" },
-      { key: "compras", label: "Compras", icon: ShoppingCart, activeColor: "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20", hoverColor: "hover:text-emerald-500" },
-      { key: "mermas", label: "Mermas", icon: AlertTriangle, activeColor: "bg-red-500 text-white shadow-lg shadow-red-500/20", hoverColor: "hover:text-red-500" },
-    ].map(tab => (
-      <button
-        key={tab.key}
-        onClick={() => setViewTab(tab.key as any)}
-        className={cn(
-          "flex items-center justify-center md:justify-start gap-2 rounded-lg px-3 md:px-4 py-2 text-[10px] font-black transition-all duration-300 uppercase tracking-widest min-h-[40px]",
-          viewTab === tab.key
-            ? cn(tab.activeColor, "scale-[1.02] md:scale-105")
-            : cn("text-muted-foreground", tab.hoverColor, "hover:bg-background/80")
-        )}
-      >
-        <tab.icon className="h-4 w-4" />
-        {tab.label}
-      </button>
-    ))}
-  </div>
-</div>
-
-      </header>
+      </div>
 
       {/* PRODUCTOS TAB */}
       {viewTab === "productos" && (

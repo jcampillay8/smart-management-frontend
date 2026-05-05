@@ -98,26 +98,49 @@ export default function Navbar({
           </div>
         )}
 
-        {/* Perfil de Usuario (Ahora a la derecha) */}
-        <div className="flex items-center gap-3 shrink-0 px-3 py-1.5 rounded-2xl hover:bg-secondary/50 transition-all cursor-default border border-transparent hover:border-border/50">
-          <div className="flex flex-col items-end min-w-0 hidden sm:flex">
-            <span className="font-bold text-xs tracking-tight truncate max-w-[120px]">
-              {user?.firstName ? `${user.firstName} ${user.lastName || ""}` : user?.username}
-            </span>
-            <span className="text-[9px] text-muted-foreground font-medium capitalize">
-              {user?.role || "Personal"}
-            </span>
-          </div>
-          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-inner">
-            {user?.userImage ? (
-              <img src={user.userImage} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-primary font-bold text-xs uppercase">
-                {user?.firstName ? `${user.firstName[0]}${user.lastName?.[0] || ""}` : user?.username?.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+         {/* Perfil de Usuario (Ahora a la derecha) */}
+         <div className="relative">
+           <div 
+             className="flex items-center gap-3 shrink-0 px-3 py-1.5 rounded-2xl hover:bg-secondary/50 transition-all cursor-pointer border border-transparent hover:border-border/50"
+             onClick={() => toggleDropdown("profile")}
+           >
+             <div className="flex flex-col items-end min-w-0 hidden sm:flex">
+               <span className="font-bold text-xs tracking-tight truncate max-w-[120px]">
+                 {user?.firstName ? `${user.firstName} ${user.lastName || ""}` : user?.username}
+               </span>
+               <span className="text-[9px] text-muted-foreground font-medium capitalize">
+                 {user?.role || "Personal"}
+               </span>
+             </div>
+             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-inner">
+               {user?.userImage ? (
+                 <img src={user.userImage} alt="Profile" className="h-full w-full object-cover" />
+               ) : (
+                 <span className="text-primary font-bold text-xs uppercase">
+                   {user?.firstName ? `${user.firstName[0]}${user.lastName?.[0] || ""}` : user?.username?.slice(0, 2).toUpperCase()}
+                 </span>
+               )}
+             </div>
+           </div>
+           {openDropdown === "profile" && (
+             <div className="absolute right-0 mt-2 w-48 bg-card rounded-2xl p-2 shadow-2xl border border-border z-50">
+               <button
+                 onClick={() => { navigate("/perfil"); setOpenDropdown(null); }}
+                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm text-left"
+               >
+                 <User size={16} className="text-muted-foreground" />
+                 Ver Perfil
+               </button>
+               <button
+                 onClick={() => { signOut(); setOpenDropdown(null); }}
+                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm text-left text-destructive"
+               >
+                 <LogOut size={16} className="text-destructive" />
+                 Cerrar Sesión
+               </button>
+             </div>
+           )}
+         </div>
 
         <div className="w-[1px] h-8 bg-border mx-1 hidden sm:block" />
 

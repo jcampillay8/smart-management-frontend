@@ -48,39 +48,41 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <UndoRedoProvider>
-          <BodegaProvider>
-            <TooltipProvider>
-              <Router>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
-                    <Route path="/" element={<StockRegistro />} />
-                    <Route path="/consumo" element={<Consumo />} />
-                    <Route path="/analiticas" element={<Analiticas />} />
-                    <Route path="/gestion" element={<Gestion />} />
-                    <Route path="/gestionar-merma" element={<GestionarMerma />} />
-                    <Route path="/reportes/resumen-general" element={<Informes />} />
-                    <Route path="/proyeccion" element={<Proyeccion />} />
-                    <Route path="/historial" element={<Historial />} />
-                    <Route path="/eventos" element={<Eventos />} />
-                    <Route path="/configuracion" element={<Configuracion />} />
-                    <Route path="/compras" element={<Compras />} />
-                    <Route path="/proveedores" element={<Proveedores />} />
-                    <Route path="/contar-inventario" element={<ContarInventario />} />
-                    <Route path="/reportes/panel-ejecutivo" element={<PanelEjecutivo />} />
-                    <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
-                    <Route path="/reportes/control-perdidas" element={<LossControl />} />
-                    <Route path="/reportes/eficiencia-operacional" element={<OperationalEfficiency />} />
-                    <Route path="/reportes/vision-financiera" element={<FinancialVision />} />
-                  </Route>
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Router>
-              <Toaster position="top-right" richColors />
-            </TooltipProvider>
-          </BodegaProvider>
-        </UndoRedoProvider>
+        <AreaOperativaProvider>
+          <UndoRedoProvider>
+            <BodegaProvider>
+              <TooltipProvider>
+                <Router>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
+                      <Route path="/" element={<StockRegistro />} />
+                      <Route path="/consumo" element={<Consumo />} />
+                      <Route path="/analiticas" element={<Analiticas />} />
+                      <Route path="/gestion" element={<Gestion />} />
+                      <Route path="/gestionar-merma" element={<GestionarMerma />} />
+                      <Route path="/reportes/resumen-general" element={<Informes />} />
+                      <Route path="/proyeccion" element={<Proyeccion />} />
+                      <Route path="/historial" element={<Historial />} />
+                      <Route path="/eventos" element={<Eventos />} />
+                      <Route path="/configuracion" element={<Configuracion />} />
+                      <Route path="/compras" element={<Compras />} />
+                      <Route path="/proveedores" element={<Proveedores />} />
+                      <Route path="/contar-inventario" element={<ContarInventario />} />
+                      <Route path="/reportes/panel-ejecutivo" element={<PanelEjecutivo />} />
+                      <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
+                      <Route path="/reportes/control-perdidas" element={<LossControl />} />
+                      <Route path="/reportes/eficiencia-operacional" element={<OperationalEfficiency />} />
+                      <Route path="/reportes/vision-financiera" element={<FinancialVision />} />
+                    </Route>
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Router>
+                <Toaster position="top-right" richColors />
+              </TooltipProvider>
+            </BodegaProvider>
+          </UndoRedoProvider>
+        </AreaOperativaProvider>
       </AuthProvider>
     </ThemeProvider>
   );
