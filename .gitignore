@@ -44,4 +44,4 @@ pnpm-debug.log*
 .eslintcache
 
 # folder
-Notas/
+/Notas

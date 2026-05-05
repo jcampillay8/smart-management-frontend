@@ -170,14 +170,40 @@ export default function GestionPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* HEADER */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2 mb-2">
-        <div className="space-y-1 shrink-0">
-          <h1 className="text-4xl font-black tracking-tighter">Gestión</h1>
-          <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
-            Catálogo de Productos y Recetas
-          </p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold flex items-center gap-2">
+          <Settings2 className="h-5 w-5 text-indigo-600" />
+          Gestión de Catálogo
+        </h1>
+        <Button onClick={() => navigate("/informes")} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white">
+          <BarChart3 className="h-4 w-4 mr-2" />
+          Analíticas e Informes
+        </Button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex justify-center">
+        <div className="inline-flex items-center rounded-lg bg-secondary p-1 gap-1">
+          {[
+            { key: "productos" as ViewTab, label: "Productos", icon: Package },
+            { key: "recetas" as ViewTab, label: "Recetas", icon: CookingPot },
+            { key: "compras" as ViewTab, label: "Compras", icon: ShoppingCart },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setViewTab(tab.key)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
+                viewTab === tab.key
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <tab.icon className="h-3.5 w-3.5" />
+              {tab.label}
+            </button>
+          ))}
         </div>
         <div className="flex-1 flex justify-center">
   <div className="grid grid-cols-2 md:flex items-center rounded-xl bg-secondary/30 p-1 gap-1.5 border border-border/50 shadow-inner w-full md:w-auto">

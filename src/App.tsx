@@ -23,7 +23,11 @@ import Configuracion from "./pages/Configuracion/index";
 import Compras from "./pages/Compras/index";
 import ContarInventario from "./pages/ContarInventario/index";
 import Proveedores from "./pages/Proveedores/index";
-import ProfilePage from "./pages/Profile/index";
+import ExecutiveOverview from "./pages/Reportes/ExecutiveOverview/index";
+import LossControl from "./pages/Reportes/LossControl/index";
+import OperationalEfficiency from "./pages/Reportes/OperationalEfficiency/index";
+import FinancialVision from "./pages/Reportes/FinancialVision/index";
+import PanelEjecutivo from "./pages/Reportes/ResumenGeneral/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -46,34 +50,35 @@ function App() {
       <AuthProvider>
         <UndoRedoProvider>
           <BodegaProvider>
-            <AreaOperativaProvider>
-              <TooltipProvider>
-                <Router>
-                  <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
-                      <Route path="/" element={<StockRegistro />} />
-                      <Route path="/consumo" element={<Consumo />} />
-                      <Route path="/alertas" element={<Analiticas />} />
-                      <Route path="/actividades" element={<Actividades />} />
-                      <Route path="/gestion" element={<Gestion />} />
-                      <Route path="/gestionar-merma" element={<GestionarMerma />} />
-                      <Route path="/informes" element={<Informes />} />
-                      <Route path="/proyeccion" element={<Proyeccion />} />
-                      <Route path="/historial" element={<Historial />} />
-                      <Route path="/eventos" element={<Eventos />} />
-                      <Route path="/configuracion" element={<Configuracion />} />
-                      <Route path="/compras" element={<Compras />} />
-                      <Route path="/proveedores" element={<Proveedores />} />
-                      <Route path="/contar-inventario" element={<ContarInventario />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                    </Route>
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Router>
-                <Toaster position="top-right" richColors />
-              </TooltipProvider>
-            </AreaOperativaProvider>
+            <TooltipProvider>
+              <Router>
+                <Routes>
+                  <Route path="/login" element={<Login />} />
+                  <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
+                    <Route path="/" element={<StockRegistro />} />
+                    <Route path="/consumo" element={<Consumo />} />
+                    <Route path="/analiticas" element={<Analiticas />} />
+                    <Route path="/gestion" element={<Gestion />} />
+                    <Route path="/gestionar-merma" element={<GestionarMerma />} />
+                    <Route path="/reportes/resumen-general" element={<Informes />} />
+                    <Route path="/proyeccion" element={<Proyeccion />} />
+                    <Route path="/historial" element={<Historial />} />
+                    <Route path="/eventos" element={<Eventos />} />
+                    <Route path="/configuracion" element={<Configuracion />} />
+                    <Route path="/compras" element={<Compras />} />
+                    <Route path="/proveedores" element={<Proveedores />} />
+                    <Route path="/contar-inventario" element={<ContarInventario />} />
+                    <Route path="/reportes/panel-ejecutivo" element={<PanelEjecutivo />} />
+                    <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
+                    <Route path="/reportes/control-perdidas" element={<LossControl />} />
+                    <Route path="/reportes/eficiencia-operacional" element={<OperationalEfficiency />} />
+                    <Route path="/reportes/vision-financiera" element={<FinancialVision />} />
+                  </Route>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Router>
+              <Toaster position="top-right" richColors />
+            </TooltipProvider>
           </BodegaProvider>
         </UndoRedoProvider>
       </AuthProvider>
