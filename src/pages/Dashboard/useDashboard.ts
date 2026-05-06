@@ -16,7 +16,7 @@ export function useDashboard() {
       const [invRes, eventRes, histRes] = await Promise.all([
         api.get("/inventory/snapshot"),
         api.get("/events/upcoming?days=7"),
-        api.get("/inventory/history/?limit=5")
+        api.get("/inventory/history?limit=5")
       ]);
 
       setData({

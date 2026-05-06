@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { DisplayProduct } from "./types";
 import { cn } from "../../lib/utils"
 import { CategoryIcon } from "../../lib/icons";
+import { SimpleCategoriaSeccion } from "../../components/SimpleCategoriaSeccion";
 
 export default function StockRegistro() {
   const { selectedBodegaIds: activeBodegaIds, bodegas: visibleBodegas } = useBodega();
@@ -41,7 +42,7 @@ export default function StockRegistro() {
     categorias, productos, bodegas, entries, snapshot, loading, saving, setSaving,
     productBodegaMap, updateEntry, isDirty, loadData, today,
     toggleMultiExpiry, addExpiryEntry, removeExpiryEntry, updateExpiryEntry
-  } = useStockData((isAll || selectedBodegaIds.length > 1) ? "all" : selectedBodegaIds[0], (isAll || selectedBodegaIds.length > 1) ? "all" : selectedBodegaIds[0]);
+  } = useStockData(selectedBodegaIds.join(","), (isAll || selectedBodegaIds.length > 1) ? "all" : selectedBodegaIds[0]);
 
   const isPropietario = user?.role?.toLowerCase() === "propietario";
 
@@ -200,19 +201,12 @@ export default function StockRegistro() {
     }
   };
 
-  if (loading) return (
-    <div className="flex h-[60vh] items-center justify-center">
-      <div className="flex flex-col items-center gap-2">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cargando Datastore...</p>
-      </div>
-    </div>
-  );
+
 
   return (
     <div className="space-y-6 pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2 mb-2">
-        <div className="space-y-1 shrink-0">
+        <div className="space-y-1 shrink-0 text-center md:text-left w-full md:w-auto">
           <h1 className="text-4xl font-black tracking-tighter">Registro de Stock</h1>
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
             Terminal de Control e Inventario
@@ -231,42 +225,28 @@ export default function StockRegistro() {
             onOpenAddingMenu={(mode) => { setAddingMode(mode); setAddingMenuOpen(true); }}
           />
 
-          {/* Filtro de Categorías Multi-select */}
-          <div className="flex flex-col gap-4 px-2">
-            <div className="flex flex-wrap gap-2">
-              {categorias.map(cat => {
-                const isSelected = selectedCategories.has(cat.id);
-                return (
-                  <button
-                    key={cat.id}
-                    onClick={() => {
-                      const next = new Set(selectedCategories);
-                      if (isSelected) next.delete(cat.id);
-                      else next.add(cat.id);
-                      setSelectedCategories(next);
-                    }}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 shadow-sm",
-                      isSelected 
-                        ? "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20" 
-                        : "bg-card text-muted-foreground border-input hover:border-primary/50"
-                    )}
-                    style={isSelected ? {} : { color: cat.color || undefined, borderColor: cat.color ? `${cat.color}40` : undefined }}
-                  >
-                    <CategoryIcon name={cat.icono} className="h-3.5 w-3.5" />
-                    {cat.nombre}
-                  </button>
-                );
-              })}
-              {selectedCategories.size > 0 && (
-                <button 
-                  onClick={() => setSelectedCategories(new Set())}
-                  className="px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-colors"
-                >
-                  Limpiar Filtros
-                </button>
-              )}
+          {loading ? (
+            <div className="flex h-[40vh] items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cargando Datastore...</p>
+              </div>
             </div>
+          ) : (
+            <>
+              {/* Filtro de Categorías Multi-select */}
+              <div className="flex flex-col gap-4 px-2">
+                <SimpleCategoriaSeccion
+                  categorias={categorias}
+                  selectedIds={selectedCategories}
+                  onToggle={(id) => {
+                    const next = new Set(selectedCategories);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    setSelectedCategories(next);
+                  }}
+                  onClear={() => setSelectedCategories(new Set())}
+                />
 
             {/* Buscador MÓVIL: Debajo de las categorías */}
             <div className="md:hidden relative group">
@@ -295,6 +275,8 @@ export default function StockRegistro() {
             removeExpiryEntry={removeExpiryEntry}
             updateExpiryEntry={updateExpiryEntry}
           />
+          </>
+          )}
         </div>
       </div>
 

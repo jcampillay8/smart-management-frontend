@@ -5,7 +5,15 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../../components/ui/dialog";
-import { LayoutGrid, Plus, Pencil, Trash2, Box, Refrigerator, Container, Warehouse, Truck, Store } from "lucide-react";
+import { 
+  LayoutGrid, Plus, Pencil, Trash2, Box, Refrigerator, Container, 
+  Warehouse, Truck, Store, Archive, Package, Snowflake, Thermometer,
+  ChefHat, Utensils, Coffee, Wine, GlassWater, ShoppingBag, Tag,
+  Layers, Droplets, Flame, Zap, Shield, MapPin, Home,
+  Bed, Bell, Key, DoorOpen, Bath, Wifi, Tv, Armchair, Dumbbell, Waves,
+  Monitor, Printer, FileText, PenTool, Headset, Calendar, Calculator, Mail,
+  Stethoscope, Siren, Power, Plug, Wrench, Lightbulb, ChevronLeft, ChevronRight
+} from "lucide-react";
 import BodegaBadge from "../../components/BodegaBadge";
 import { cn } from "../../lib/utils";
 
@@ -19,16 +27,60 @@ interface Bodega {
 }
 
 const AVAILABLE_COLORS = [
-  "#10B981", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#64748B", "#06B6D4"
+  "#7F1D1D", "#EF4444", "#F97316", "#EAB308", "#84CC16", "#22C55E", 
+  "#064E3B", "#14B8A6", "#0891B2", "#0EA5E9", "#2563EB", "#6366F1", 
+  "#8B5CF6", "#D946EF", "#EC4899", "#78350F", "#451A03", "#64748B"
 ];
 
 const AVAILABLE_ICONS = [
-  { id: "Box", icon: Box },
-  { id: "Refrigerator", icon: Refrigerator },
-  { id: "Container", icon: Container },
   { id: "Warehouse", icon: Warehouse },
-  { id: "Truck", icon: Truck },
+  { id: "Box", icon: Box },
+  { id: "Package", icon: Package },
+  { id: "Archive", icon: Archive },
+  { id: "Container", icon: Container },
+  { id: "Refrigerator", icon: Refrigerator },
+  { id: "Snowflake", icon: Snowflake },
+  { id: "Thermometer", icon: Thermometer },
+  { id: "ChefHat", icon: ChefHat },
+  { id: "Utensils", icon: Utensils },
+  { id: "Coffee", icon: Coffee },
+  { id: "Wine", icon: Wine },
+  { id: "GlassWater", icon: GlassWater },
   { id: "Store", icon: Store },
+  { id: "Truck", icon: Truck },
+  { id: "ShoppingBag", icon: ShoppingBag },
+  { id: "Tag", icon: Tag },
+  { id: "Layers", icon: Layers },
+  { id: "Droplets", icon: Droplets },
+  { id: "Flame", icon: Flame },
+  { id: "Zap", icon: Zap },
+  { id: "Shield", icon: Shield },
+  { id: "MapPin", icon: MapPin },
+  { id: "Home", icon: Home },
+  { id: "Bed", icon: Bed },
+  { id: "Bell", icon: Bell },
+  { id: "Key", icon: Key },
+  { id: "DoorOpen", icon: DoorOpen },
+  { id: "Bath", icon: Bath },
+  { id: "Wifi", icon: Wifi },
+  { id: "Tv", icon: Tv },
+  { id: "Armchair", icon: Armchair },
+  { id: "Dumbbell", icon: Dumbbell },
+  { id: "Waves", icon: Waves },
+  { id: "Monitor", icon: Monitor },
+  { id: "Printer", icon: Printer },
+  { id: "FileText", icon: FileText },
+  { id: "PenTool", icon: PenTool },
+  { id: "Headset", icon: Headset },
+  { id: "Calendar", icon: Calendar },
+  { id: "Calculator", icon: Calculator },
+  { id: "Mail", icon: Mail },
+  { id: "Stethoscope", icon: Stethoscope },
+  { id: "Siren", icon: Siren },
+  { id: "Power", icon: Power },
+  { id: "Plug", icon: Plug },
+  { id: "Wrench", icon: Wrench },
+  { id: "Lightbulb", icon: Lightbulb },
 ];
 
 export function BodegasConfig() {
@@ -42,6 +94,9 @@ export function BodegasConfig() {
   const [color, setColor] = useState("#10B981");
   const [icono, setIcono] = useState("Box");
   const [saving, setSaving] = useState(false);
+  const [iconPage, setIconPage] = useState(0);
+  const iconsPerPage = 24;
+  const totalPages = Math.ceil(AVAILABLE_ICONS.length / iconsPerPage);
 
   useEffect(() => {
     loadBodegas();
@@ -182,21 +237,64 @@ export function BodegasConfig() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ícono Distintivo</Label>
-              <div className="grid grid-cols-6 gap-2">
-                {AVAILABLE_ICONS.map(i => (
-                  <button
-                    key={i.id}
-                    type="button"
-                    onClick={() => setIcono(i.id)}
-                    className={cn(
-                      "h-10 w-10 rounded-xl border flex items-center justify-center transition-all hover:bg-muted",
-                      icono === i.id ? "bg-primary/10 border-primary text-primary" : "border-transparent text-muted-foreground"
-                    )}
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ícono Distintivo</Label>
+                <div className="hidden md:flex items-center gap-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={() => setIconPage(p => Math.max(0, p - 1))}
+                    disabled={iconPage === 0}
                   >
-                    <i.icon size={20} />
-                  </button>
-                ))}
+                    <ChevronLeft className="h-3 w-3" />
+                  </Button>
+                  <span className="text-[9px] font-bold text-muted-foreground uppercase">{iconPage + 1} / {totalPages}</span>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={() => setIconPage(p => Math.min(totalPages - 1, p + 1))}
+                    disabled={iconPage === totalPages - 1}
+                  >
+                    <ChevronRight className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Mobile: Scroll horizontal / PC: Paginated Grid */}
+              <div className="relative group w-full overflow-hidden">
+                <div className="md:hidden grid grid-rows-3 grid-flow-col overflow-x-auto gap-2 pb-3 px-1 scroll-smooth custom-scrollbar touch-pan-x min-h-[120px] w-full">
+                  {AVAILABLE_ICONS.map(i => (
+                    <button
+                      key={i.id}
+                      type="button"
+                      onClick={() => setIcono(i.id)}
+                      className={cn(
+                        "h-9 w-9 shrink-0 rounded-xl border flex items-center justify-center transition-all",
+                        icono === i.id ? "bg-primary/10 border-primary text-primary" : "bg-muted/30 border-transparent text-muted-foreground"
+                      )}
+                    >
+                      <i.icon size={18} />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="hidden md:grid grid-cols-6 gap-2">
+                  {AVAILABLE_ICONS.slice(iconPage * iconsPerPage, (iconPage + 1) * iconsPerPage).map(i => (
+                    <button
+                      key={i.id}
+                      type="button"
+                      onClick={() => setIcono(i.id)}
+                      className={cn(
+                        "h-11 w-11 rounded-xl border flex items-center justify-center transition-all hover:bg-muted",
+                        icono === i.id ? "bg-primary/10 border-primary text-primary" : "border-transparent text-muted-foreground"
+                      )}
+                    >
+                      <i.icon size={20} />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             

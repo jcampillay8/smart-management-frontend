@@ -26,9 +26,9 @@ export function useHistorial(selectedBodegaId: string) {
       if (fechaHasta) params.append("fecha_hasta", fechaHasta.toISOString().split("T")[0]);
 
       const [regRes, allRegRes, prodRes] = await Promise.all([
-        api.get(`/inventory/history/?${params.toString()}`),
-        api.get("/inventory/history/?bodega_id=all&tipo_movimiento=all&fecha_desde=1900-01-01"),
-        api.get("/inventory/products/"),
+        api.get(`/inventory/history?${params.toString()}`),
+        api.get("/inventory/history?bodega_id=all&tipo_movimiento=all&fecha_desde=1900-01-01"),
+        api.get("/inventory/products"),
       ]);
 
       setRegistros(regRes.data ?? []);

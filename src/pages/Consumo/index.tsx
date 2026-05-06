@@ -23,22 +23,22 @@ import { AreaSelector } from "../../components/AreaSelector";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Consumo() {
-  const { selectedBodegaId, bodegas } = useBodega();
+  const { selectedBodegaIds, bodegas } = useBodega();
   const { selectedArea } = useAreaOperativa();
   const { isAdmin } = useAuth();
 
   const { 
-    productos, categorias, recetas, cart, loading, saving, 
+    productos, categorias, categoriasRecetas, recetas, cart, loading, saving, 
     setSaving, setCart, addToCart, removeFromCart, updateQuantity,
-    getStock, groupedProducts, consumptionLog, refreshLog,
+    getStock, groupedProducts, groupedRecetas, consumptionLog, refreshLog,
     updateConsumo, deleteConsumo
   } = useConsumo(
-    selectedBodegaId === "all" ? "all" : selectedBodegaId,
+    selectedBodegaIds.join(","),
     selectedArea?.id ?? null
   );
   
   const [busqueda, setBusqueda] = useState("");
-  const [viewMode, setViewMode] = useState<"productos" | "recetas">("productos");
+  const [viewMode, setViewMode] = useState<"productos" | "recetas">("recetas");
   const [editRecord, setEditRecord] = useState<ConsumptionRecord | null>(null);
   const [showLogMobile, setShowLogMobile] = useState(false);
   const { undo, redo } = useUndoRedo();
@@ -64,8 +64,9 @@ export default function Consumo() {
 
     // For non-admins, must have an area with a bodega_consumo set
     const areaId = selectedArea?.id;
+    const isAll = selectedBodegaIds.includes("all");
     const bodegaConsumoId = selectedArea?.bodega_consumo_id
-      ?? (selectedBodegaId !== "all" ? selectedBodegaId : bodegas[0]?.id);
+      ?? (!isAll ? selectedBodegaIds[0] : bodegas[0]?.id);
 
     if (!bodegaConsumoId) {
       toast.error("No hay bodega de consumo configurada");
@@ -134,8 +135,8 @@ export default function Consumo() {
   return (
     <div className="space-y-6 pb-10">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center justify-between w-full">
-          <div className="space-y-1">
+        <div className="flex flex-col md:flex-row items-center justify-between w-full gap-4">
+          <div className="space-y-1 text-center md:text-left">
             <h1 className="text-4xl font-black tracking-tighter">Registro de Consumos</h1>
             <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
               Preparaciones y uso de insumos
@@ -161,22 +162,22 @@ export default function Consumo() {
           {/* Toggle PC/Tablet: A continuación del selector de bodegas */}
           <div className="hidden md:flex items-center rounded-xl bg-secondary/30 p-1 border border-border/50">
             <button
-              onClick={() => setViewMode("productos")}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                viewMode === "productos" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Productos
-            </button>
-            <button
               onClick={() => setViewMode("recetas")}
               className={cn(
                 "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                viewMode === "recetas" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:text-foreground"
+                viewMode === "recetas" ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20" : "text-muted-foreground hover:text-purple-500"
               )}
             >
               Recetas
+            </button>
+            <button
+              onClick={() => setViewMode("productos")}
+              className={cn(
+                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === "productos" ? "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20" : "text-muted-foreground hover:text-yellow-500"
+              )}
+            >
+              Productos
             </button>
           </div>
         </div>
@@ -185,22 +186,22 @@ export default function Consumo() {
         <div className="flex md:hidden items-center justify-between w-full gap-3">
           <div className="flex items-center rounded-xl bg-secondary/30 p-1 border border-border/50 flex-1">
             <button
-              onClick={() => setViewMode("productos")}
-              className={cn(
-                "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                viewMode === "productos" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground"
-              )}
-            >
-              Productos
-            </button>
-            <button
               onClick={() => setViewMode("recetas")}
               className={cn(
                 "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                viewMode === "recetas" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground"
+                viewMode === "recetas" ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20" : "text-muted-foreground"
               )}
             >
               Recetas
+            </button>
+            <button
+              onClick={() => setViewMode("productos")}
+              className={cn(
+                "flex-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === "productos" ? "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20" : "text-muted-foreground"
+              )}
+            >
+              Productos
             </button>
           </div>
           <Button 
@@ -214,19 +215,21 @@ export default function Consumo() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <ConsumoCatalog 
-          busqueda={busqueda}
-          onBusquedaChange={setBusqueda}
-          productos={viewMode === "productos" ? filteredProds : []}
-          recetas={viewMode === "recetas" ? recetas : []}
-          categorias={categorias}
-          groupedProducts={groupedProducts}
-          onAdd={addToCart}
-          getStock={getStock}
-          viewMode={viewMode}
-        />
+        <div className="lg:col-span-3 order-1">
+          <ConsumoCatalog 
+            busqueda={busqueda}
+            onBusquedaChange={setBusqueda}
+            productos={viewMode === "productos" ? productos : []}
+            recetas={viewMode === "recetas" ? recetas : []}
+            categorias={viewMode === "productos" ? categorias : categoriasRecetas}
+            groupedItems={viewMode === "productos" ? groupedProducts : groupedRecetas}
+            onAdd={addToCart}
+            getStock={getStock}
+            viewMode={viewMode}
+          />
+        </div>
         
-        <div className="lg:col-span-3">
+        <div className="lg:col-span-1 order-2">
           <ConsumoCart 
             cart={cart}
             saving={saving}

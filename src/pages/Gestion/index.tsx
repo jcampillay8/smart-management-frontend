@@ -67,10 +67,7 @@ export default function GestionPage() {
     return new Set(DEFAULT_COLUMNS);
   });
   
-  const [showCategories, setShowCategories] = useState(() => {
-    const saved = localStorage.getItem("gestion_show_categories");
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [showCategories, setShowCategories] = useState(true);
 
   useEffect(() => {
     localStorage.setItem("gestion_visible_columns_v2", JSON.stringify(Array.from(visibleCols)));
@@ -80,10 +77,7 @@ export default function GestionPage() {
     localStorage.setItem("gestion_show_categories", JSON.stringify(showCategories));
   }, [showCategories]);
 
-  const [showRecetaCategories, setShowRecetaCategories] = useState(() => {
-    const saved = localStorage.getItem("gestion_show_receta_categories");
-    return saved ? JSON.parse(saved) : false;
-  });
+  const [showRecetaCategories, setShowRecetaCategories] = useState(true);
 
   useEffect(() => {
     localStorage.setItem("gestion_show_receta_categories", JSON.stringify(showRecetaCategories));
@@ -158,6 +152,15 @@ export default function GestionPage() {
     return m;
   }, [bodegas]);
 
+  const tabStyles = {
+    productos: { gradient: "from-yellow-500/10", border: "border-yellow-500/20" },
+    recetas: { gradient: "from-purple-500/10", border: "border-purple-500/20" },
+    compras: { gradient: "from-emerald-500/10", border: "border-emerald-500/20" },
+    mermas: { gradient: "from-red-500/10", border: "border-red-500/20" },
+  };
+
+  const currentStyle = tabStyles[viewTab as keyof typeof tabStyles] || { gradient: "from-transparent", border: "border-transparent" };
+
   if (loading) {
     return (
       <div className="flex h-[60vh] items-center justify-center">
@@ -170,10 +173,17 @@ export default function GestionPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="relative min-h-screen">
+      {/* Dynamic Background Gradient */}
+      <div className={cn(
+        "absolute -top-10 -mx-10 inset-x-0 bg-gradient-to-b to-background pointer-events-none transition-colors duration-700 h-[600px]",
+        currentStyle.gradient
+      )} />
+
+      <div className="relative space-y-6">
       {/* HEADER */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2 mb-2">
-        <div className="space-y-1 shrink-0">
+        <div className="space-y-1 shrink-0 text-center md:text-left w-full md:w-auto">
           <h1 className="text-4xl font-black tracking-tighter">Gestión</h1>
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
             Catálogo de Productos y Recetas
@@ -191,13 +201,13 @@ export default function GestionPage() {
         key={tab.key}
         onClick={() => setViewTab(tab.key as any)}
         className={cn(
-          "flex items-center justify-center md:justify-start gap-2 rounded-lg px-3 md:px-4 py-2 text-[10px] font-black transition-all duration-300 uppercase tracking-widest min-h-[40px]",
+          "flex items-center justify-center md:justify-start gap-2 rounded-lg px-3 md:px-4 py-1.5 md:py-2 text-[10px] font-black transition-all duration-300 uppercase tracking-widest min-h-[32px] md:min-h-[40px]",
           viewTab === tab.key
             ? cn(tab.activeColor, "scale-[1.02] md:scale-105")
             : cn("text-muted-foreground", tab.hoverColor, "hover:bg-background/80")
         )}
       >
-        <tab.icon className="h-4 w-4" />
+        <tab.icon className="h-3 w-3 md:h-4 md:w-4" />
         {tab.label}
       </button>
     ))}
@@ -209,8 +219,8 @@ export default function GestionPage() {
       {/* PRODUCTOS TAB */}
       {viewTab === "productos" && (
         <section className="space-y-4 px-2">
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* TOOLBAR PC */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
             <AreaSelector />
             <BodegaSelector />
             
@@ -257,15 +267,72 @@ export default function GestionPage() {
             </Button>
           </div>
 
-          {/* INLINE CATEGORY FILTER */}
-          {showCategories && (
+          {/* TOOLBAR MOBILE */}
+          <div className="flex md:hidden flex-col gap-3">
+            {/* Row 1: Area & Producto 2x2 */}
+            <div className="grid grid-cols-2 gap-2">
+              <AreaSelector buttonClassName="min-w-0 w-full rounded-xl" />
+              <Button size="sm" onClick={() => openProdDialog()} className="h-10 w-full rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest">
+                <Plus className="h-4 w-4" />
+                <span>Producto</span>
+              </Button>
+            </div>
+            
+            {/* Row 2: Bodega & Columnas 2x2 */}
+            <div className="grid grid-cols-2 gap-2">
+              <BodegaSelector className="min-w-0 w-full rounded-xl" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-10 w-full rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest">
+                    <LayoutPanelTop className="h-4 w-4" />
+                    <span>Columnas</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-52">
+                  {ALL_COLUMNS.map(col => (
+                    <DropdownMenuCheckboxItem
+                      key={col.key}
+                      checked={visibleCols.has(col.key)}
+                      onCheckedChange={() => toggleCol(col.key)}
+                    >
+                      {col.label}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* Categories ALWAYS visible on mobile */}
             <CategoriaSeccion
               categorias={categorias}
               onUpdate={refresh}
               selectedIds={selectedCategoryIds}
               onToggle={toggleCategory}
             />
-          )}
+
+            {/* Search below categories on mobile */}
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={productSearch}
+                onChange={e => setProductSearch(e.target.value)}
+                placeholder="Buscar producto..."
+                className="pl-9 h-10 w-full rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* PC CATEGORY FILTER */}
+          <div className="hidden md:block">
+            {showCategories && (
+              <CategoriaSeccion
+                categorias={categorias}
+                onUpdate={refresh}
+                selectedIds={selectedCategoryIds}
+                onToggle={toggleCategory}
+              />
+            )}
+          </div>
 
           {/* PRODUCT TABLE */}
           {filteredGroupedProductos.length === 0 ? (
@@ -418,8 +485,8 @@ export default function GestionPage() {
       {/* RECETAS TAB */}
       {viewTab === "recetas" && (
         <section className="space-y-4 px-2">
-          {/* Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* TOOLBAR PC */}
+          <div className="hidden md:flex items-center gap-2 flex-wrap">
             <AreaSelector />
             <Button 
               variant={showRecetaCategories ? "default" : "outline"} 
@@ -445,10 +512,36 @@ export default function GestionPage() {
             </Button>
           </div>
 
-          {/* INLINE CATEGORY FILTER */}
-          {showRecetaCategories && (
+          {/* TOOLBAR MOBILE */}
+          <div className="flex md:hidden flex-col gap-3">
+            <div className="grid grid-cols-2 gap-2">
+              <AreaSelector buttonClassName="min-w-0 w-full rounded-xl" />
+              <Button onClick={() => openRecetaDialog()} size="sm" className="bg-purple-600 hover:bg-purple-700 text-white font-bold h-10 w-full rounded-xl gap-2 text-[10px] uppercase tracking-widest">
+                <Plus className="h-4 w-4" /> <span>Receta</span>
+              </Button>
+            </div>
+
+            {/* Categories ALWAYS visible on mobile */}
             <CategoriaRecetaSeccion categorias={categoriasRecetas} onUpdate={refresh} />
-          )}
+
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar recetas..."
+                value={recetaSearch}
+                onChange={e => setRecetaSearch(e.target.value)}
+                className="pl-9 h-10 w-full rounded-xl"
+              />
+            </div>
+          </div>
+
+          {/* PC CATEGORY FILTER */}
+          <div className="hidden md:block">
+            {showRecetaCategories && (
+              <CategoriaRecetaSeccion categorias={categoriasRecetas} onUpdate={refresh} />
+            )}
+          </div>
+
 
           {filteredRecetas.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">No hay recetas.</p>
@@ -537,6 +630,7 @@ export default function GestionPage() {
         categorias={categoriasRecetas}
         onSuccess={refresh}
       />
+      </div>
     </div>
   );
 }

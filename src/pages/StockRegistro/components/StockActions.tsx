@@ -36,9 +36,9 @@ export function StockActions({
         
         <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 w-full">
           {/* Selectores de Área y Bodega Integrados */}
-          <div className="flex items-center gap-2 w-full sm:w-auto bg-muted/50 p-1.5 rounded-xl border border-input shadow-inner shrink-0">
-            <AreaSelector />
-            <BodegaSelector />
+          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:w-auto bg-muted/50 p-1.5 rounded-xl border border-input shadow-inner shrink-0">
+            <AreaSelector buttonClassName="w-full min-w-0 sm:min-w-[180px]" />
+            <BodegaSelector className="w-full min-w-0 sm:min-w-[160px]" />
           </div>
 
           <div className="hidden sm:block w-[1px] h-8 bg-border mx-1" />

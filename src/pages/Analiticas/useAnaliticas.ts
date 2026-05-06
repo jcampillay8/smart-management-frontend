@@ -13,7 +13,7 @@ export function useAnaliticas(selectedBodegaId: string) {
     try {
       const [prodRes, histRes] = await Promise.all([
         api.get("/inventory/products"),
-        api.get("/inventory/history/")
+        api.get("/inventory/history")
       ]);
 
       // Generamos el snapshot del sistema

@@ -55,7 +55,7 @@ export default function HistorialPage() {
   return (
     <div className="space-y-6">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
-        <div className="space-y-1">
+        <div className="space-y-1 text-center md:text-left w-full md:w-auto">
           <h1 className="text-4xl font-black tracking-tighter">Historial</h1>
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
             Auditoría y Trazabilidad de Inventario

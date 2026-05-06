@@ -13,7 +13,7 @@ export function useGlobalNotifications() {
     try {
       const [prodRes, histRes] = await Promise.all([
         api.get("/inventory/products"),
-        api.get("/inventory/history/"),
+        api.get("/inventory/history"),
       ]);
 
       const snapshot = buildInventorySnapshot(histRes.data, new Date().toISOString(), "");

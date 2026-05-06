@@ -50,7 +50,7 @@ export function MermaRegisterDialog({ open, onOpenChange, onSuccess }: MermaRegi
     try {
       const [prodRes, histRes] = await Promise.all([
         api.get("/inventory/products"),
-        api.get("/inventory/history/")
+        api.get("/inventory/history")
       ]);
       setProductos(prodRes.data);
       setAllRecords(histRes.data);

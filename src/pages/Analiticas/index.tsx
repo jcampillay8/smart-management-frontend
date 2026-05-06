@@ -35,7 +35,7 @@ export default function AnaliticasPage() {
   return (
     <div className="space-y-6 pb-10">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2 mb-2">
-        <div className="space-y-1 shrink-0">
+        <div className="space-y-1 shrink-0 text-center md:text-left w-full md:w-auto">
           <h1 className="text-4xl font-black tracking-tighter">Alertas</h1>
           <p className="text-muted-foreground text-[10px] font-bold uppercase tracking-widest">
             Estado de Stock y Vencimientos del Sistema

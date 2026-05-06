@@ -65,7 +65,7 @@ export function MermaHistory({ mermas, productos, busqueda, getProductName, getP
             <TableRow key={m.id} className={i % 2 === 1 ? "bg-secondary/50" : ""}>
               <TableCell className="font-medium">{getProductName(m.producto_id)}</TableCell>
               <TableCell>
-                <BodegaBadge nombre={m.bodega_id ? (m.bodega_id?.nombre || "") : ""} />
+                <BodegaBadge nombre={m.nombre_bodega || ""} />
               </TableCell>
               <TableCell className="text-right font-bold text-destructive">
                 {m.cantidad} {getProductUnit(m.producto_id)}

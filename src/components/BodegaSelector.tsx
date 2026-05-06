@@ -38,52 +38,43 @@ export default function BodegaSelector({ className, hideAll }: BodegaSelectorPro
 
   return (
     <div className="relative">
-      {/* TRIGGER */}
-      <button
-        onClick={() => setOpen(prev => !prev)}
+      {/* TRIGGER - Ahora muestra todas las bodegas como interruptores */}
+      <div
         className={cn(
-          "flex items-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all hover:bg-secondary/80 focus:outline-none overflow-hidden h-10 min-w-[160px]",
+          "flex items-center gap-0.5 rounded-2xl border bg-background/50 overflow-hidden h-10 min-w-[160px] select-none",
           className
         )}
-        style={
-          !allSelected && selectedBodegaIds.length === 1 && currentColor
-            ? { backgroundColor: `${currentColor}15`, color: currentColor, borderColor: `${currentColor}30` }
-            : {}
-        }
       >
-        {/* MULTI-BODEGA VISUALIZER */}
-        {allSelected || selectedBodegaIds.length > 1 ? (
-          <div className="flex h-full flex-1 items-stretch">
-            {selectedBodegasData.slice(0, 4).map((b) => {
-              const Icon = b.icono && (LucideIcons as any)[b.icono] ? (LucideIcons as any)[b.icono] : LucideIcons.MapPin;
-              return (
-                <div
-                  key={b.id}
-                  className="flex-1 flex items-center justify-center border-r border-white/10 last:border-0"
-                  style={{ backgroundColor: b.color ? `${b.color}25` : undefined, color: b.color }}
-                >
-                  <Icon size={12} strokeWidth={3} />
-                </div>
-              );
-            })}
-            {selectedBodegasData.length > 4 && (
-              <div className="flex-1 flex items-center justify-center bg-secondary/50 text-muted-foreground text-[8px]">
-                +{selectedBodegasData.length - 4}
+        <div className="flex h-full flex-1 items-stretch">
+          {bodegas.map((b) => {
+            const isActive = allSelected || selectedBodegaIds.includes(b.id);
+            const Icon = b.icono && (LucideIcons as any)[b.icono] ? (LucideIcons as any)[b.icono] : MapPin;
+            
+            return (
+              <div
+                key={b.id}
+                onClick={(e) => { e.stopPropagation(); toggleBodegaId(b.id); }}
+                className={cn(
+                  "flex-1 flex items-center justify-center border-r border-white/5 last:border-0 transition-all cursor-pointer group select-none",
+                  isActive ? "" : "opacity-40 grayscale hover:opacity-60 hover:grayscale-0 bg-transparent"
+                )}
+                style={isActive ? { backgroundColor: b.color ? `${b.color}20` : undefined, color: b.color } : {}}
+                title={b.nombre}
+              >
+                <Icon size={14} strokeWidth={3} className="transition-transform group-active:scale-90 pointer-events-none" />
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-4 w-full">
-            {(() => {
-              const b = bodegas.find(b => b.id === selectedBodegaIds[0]);
-              const Icon = b?.icono && (LucideIcons as any)[b.icono] ? (LucideIcons as any)[b.icono] : MapPin;
-              return <Icon size={14} strokeWidth={3} />;
-            })()}
-            <span className="flex-1 text-left truncate">{getLabel()}</span>
-          </div>
-        )}
-        <ChevronDown size={12} className={cn("mr-3 opacity-50 shrink-0 transition-transform", open && "rotate-180")} />
-      </button>
+            );
+          })}
+        </div>
+
+        {/* Botón para el Dropdown completo */}
+        <div 
+          onClick={() => setOpen(prev => !prev)}
+          className="flex items-center justify-center px-3 h-full hover:bg-white/5 transition-colors cursor-pointer border-l border-white/5"
+        >
+          <ChevronDown size={12} className={cn("opacity-50 transition-transform", open && "rotate-180")} />
+        </div>
+      </div>
 
       {/* DROPDOWN PANEL — controlled manually so it never closes on item click */}
       {open && (

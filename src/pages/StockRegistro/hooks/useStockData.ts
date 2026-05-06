@@ -51,50 +51,32 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
       // El backend ya calcula el snapshot con Polars
       const backendSnapshot = statusRes.data || [];
       const loadedBodegas = bodRes.data;
-      const init: Record<string, StockEntry> = {};
 
       // Convertir snapshot del backend al formato que espera la UI
-      if (selectedBodegaId === "all") {
-        loadedBodegas.forEach((bodega: Bodega) => {
-          // Obtener productos configurados en esta bodega
-          const productosEnBodega = prodRes.data.filter((p: Producto) => {
-            const configs = p.bodegas_config || [];
-            return configs.some((bc: any) => bc.bodega_id === bodega.id);
-          });
-          
-          productosEnBodega.forEach((p: Producto) => {
-            // Obtener lotes del snapshot para este producto en esta bodega
-            const bSnapshot = backendSnapshot.filter((s: any) => 
-              s.bodega_id === bodega.id && s.producto_id === p.id
-            );
-            const lots = bSnapshot.filter((s: any) => s.stock_actual > 0);
-            
-            const key = `${p.id}::${bodega.id}`;
-            init[key] = {
-              cantidad: lots.length === 1 ? lots[0].stock_actual : 0,
-              fecha_recuento: today,
-              fecha_vencimiento: lots.length === 1 ? (lots[0].fecha_vencimiento || "") : "",
-              multiExpiry: lots.length > 1,
-              expiryEntries: lots.length > 0 ? lots.map(l => ({ 
-                fecha_vencimiento: l.fecha_vencimiento || "", 
-                cantidad: l.stock_actual 
-              })) : [],
-            };
-          });
-        });
-      } else {
-        // Obtener productos configurados en la bodega seleccionada
+      const selectedIds = selectedBodegaId === "all" 
+        ? loadedBodegas.map((b: any) => b.id) 
+        : selectedBodegaId.split(",").filter(Boolean);
+      
+      const isMulti = selectedIds.length > 1;
+      const init: Record<string, StockEntry> = {};
+
+      selectedIds.forEach((bId: string) => {
+        const bodega = loadedBodegas.find((b: any) => b.id === bId);
+        if (!bodega) return;
+
+        // Obtener productos configurados en esta bodega
         const productosEnBodega = prodRes.data.filter((p: Producto) => {
           const configs = p.bodegas_config || [];
-          return configs.some((bc: any) => bc.bodega_id === selectedBodegaId);
+          return configs.some((bc: any) => bc.bodega_id === bId);
         });
         
         productosEnBodega.forEach((p: Producto) => {
           const lots = backendSnapshot.filter((s: any) => 
-            s.bodega_id === selectedBodegaId && s.producto_id === p.id && s.stock_actual > 0
+            s.bodega_id === bId && s.producto_id === p.id && s.stock_actual > 0
           );
           
-          init[p.id] = {
+          const key = isMulti ? `${p.id}::${bId}` : p.id;
+          init[key] = {
             cantidad: lots.length === 1 ? lots[0].stock_actual : 0,
             fecha_recuento: today,
             fecha_vencimiento: lots.length === 1 ? (lots[0].fecha_vencimiento || "") : "",
@@ -105,7 +87,7 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
             })) : [],
           };
         });
-      }
+      });
 
       setEntries(init);
       setInitialEntries(JSON.stringify(init));

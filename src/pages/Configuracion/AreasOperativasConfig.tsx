@@ -18,7 +18,7 @@ interface UserOption { id: number; email: string; username: string; }
 
 export function AreasOperativasConfig() {
   const { areas, refreshAreas } = useAreaOperativa();
-  const { bodegas } = useBodega();
+  const { allBodegas: bodegas } = useBodega();
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -112,14 +112,14 @@ export function AreasOperativasConfig() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-0.5 text-center md:text-left">
           <h3 className="text-sm font-black uppercase tracking-tight">Áreas Operativas</h3>
           <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">
             Agrupa bodegas y usuarios bajo un contexto de operación.
           </p>
         </div>
-        <Button onClick={openNew} size="sm" className="rounded-xl gap-2 font-black text-[10px] uppercase shadow-lg shadow-primary/20">
+        <Button onClick={openNew} size="sm" className="rounded-xl gap-2 font-black text-[10px] uppercase shadow-lg shadow-primary/20 w-full md:w-auto">
           <Plus className="h-4 w-4" /> Nueva Área
         </Button>
       </div>

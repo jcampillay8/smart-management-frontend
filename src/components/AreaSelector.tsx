@@ -5,9 +5,10 @@ import { cn } from "../lib/utils";
 
 interface AreaSelectorProps {
   className?: string;
+  buttonClassName?: string;
 }
 
-export function AreaSelector({ className }: AreaSelectorProps) {
+export function AreaSelector({ className, buttonClassName }: AreaSelectorProps) {
   const { areas, selectedAreaId, setSelectedAreaId, selectedArea } = useAreaOperativa();
   const [open, setOpen] = useState(false);
 
@@ -17,7 +18,7 @@ export function AreaSelector({ className }: AreaSelectorProps) {
     <div className={cn("relative", className)}>
       <button
         onClick={() => setOpen(p => !p)}
-        className="flex items-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all hover:bg-secondary/80 h-10 px-4 min-w-[180px] bg-card"
+        className={cn("flex items-center gap-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all hover:bg-secondary/80 h-10 px-4 min-w-[180px] bg-card", buttonClassName)}
       >
         <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
         <span className="flex-1 text-left truncate">{selectedArea?.nombre ?? "Área Operativa"}</span>

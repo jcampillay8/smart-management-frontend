@@ -20,9 +20,9 @@ export function useGestion() {
       const [catRes, prodRes, recRes, catRecRes, mermasRes] = await Promise.all([
         api.get("/inventory/categories"),
         api.get("/inventory/products"),
-        api.get("/operations/recipes/"),
+        api.get("/operations/recipes"),
         api.get("/operations/recipes/categories"),
-        api.get("/inventory/history/?tipo_movimiento=merma"),
+        api.get("/inventory/history?tipo_movimiento=merma"),
       ]);
       setCategorias(catRes.data ?? []);
       setCategoriasRecetas(catRecRes.data ?? []);

@@ -94,7 +94,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-black text-[11px] leading-tight tracking-widest uppercase whitespace-pre-wrap break-words">
+                <span className="font-black text-sm leading-tight tracking-tighter uppercase whitespace-pre-wrap break-words">
                   {name || "SIOCI"}
                 </span>
               </div>

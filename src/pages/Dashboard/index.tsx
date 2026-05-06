@@ -15,7 +15,7 @@ export default function Dashboard() {
       <motion.header 
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
-        className="flex flex-col gap-2"
+        className="flex flex-col gap-2 text-center md:text-left"
       >
         <h1 className="text-4xl font-bold tracking-tight">
           Hola, <span className="text-primary">{user?.firstName || user?.username}</span> 👋

@@ -7,6 +7,7 @@ import { Categoria, Producto, Receta, CartItem, ConsumptionRecord } from "./type
 export function useConsumo(bodegaId: string = "all", areaId: string | null = null) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [categoriasRecetas, setCategoriasRecetas] = useState<Categoria[]>([]);
   const [allRecetas, setAllRecetas] = useState<Receta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -18,15 +19,17 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
   const loadData = async () => {
     try {
       const today = new Date().toISOString().split("T")[0];
-      const [catRes, prodRes, stockRes, recetaRes, logRes] = await Promise.all([
+      const [catRes, catRecRes, prodRes, stockRes, recetaRes, logRes] = await Promise.all([
         api.get("/inventory/categories"),
+        api.get("/operations/recipes/categories"),
         api.get("/inventory/products"),
         api.get(`/inventory/stock/status?bodega_id=${bodegaId}`),
-        api.get("/operations/recipes/"),
-        api.get(`/inventory/history/?tipo_movimiento=consumo&fecha_desde=${today}&fecha_hasta=${today}`),
+        api.get("/operations/recipes"),
+        api.get(`/inventory/history?tipo_movimiento=consumo&fecha_desde=${today}&fecha_hasta=${today}`),
       ]);
 
       setCategorias(catRes.data || []);
+      setCategoriasRecetas(catRecRes.data || []);
       setProductos(prodRes.data || []);
       setAllRecetas(recetaRes.data || []);
       setConsumptionLog(logRes.data || []);
@@ -98,6 +101,15 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
       .filter(c => c.productos.length > 0);
   }, [categorias, filteredProducts]);
 
+  const groupedRecetas = useMemo(() => {
+    return categoriasRecetas
+      .map(c => ({
+        ...c,
+        recetas: recetas.filter(r => r.categoria_id === c.id),
+      }))
+      .filter(c => c.recetas.length > 0);
+  }, [categoriasRecetas, recetas]);
+
   const addToCart = (item: any, type: "producto" | "receta") => {
     setCart(prev => {
       const existing = prev.find(i => i.id === item.id && i.type === type);
@@ -155,6 +167,7 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
   return {
     productos: filteredProducts,
     categorias,
+    categoriasRecetas,
     recetas,
     cart,
     loading,
@@ -166,6 +179,7 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
     updateQuantity,
     getStock,
     groupedProducts,
+    groupedRecetas,
     consumptionLog,
     refreshLog,
     updateConsumo,

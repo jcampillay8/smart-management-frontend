@@ -53,14 +53,27 @@ export function BodegaProvider({ children }: { children: ReactNode }) {
 
   const toggleBodegaId = (id: string) => {
     setSelectedBodegaIds(prev => {
-      if (id === "all") return ["all"];
-      let next = prev.filter(i => i !== "all");
-      if (next.includes(id)) {
-        next = next.filter(i => i !== id);
-        if (next.length === 0) return ["all"];
-        return next;
+      if (id === "all") {
+        if (prev.length === 1 && prev[0] === "all") return prev;
+        return ["all"];
+      }
+
+      const isAllSelected = prev.includes("all");
+      const isCurrentlySelected = prev.includes(id);
+
+      if (isAllSelected) {
+        // Si estamos en modo "Todas", al clickear una específica pasamos a solo esa
+        return [id];
+      }
+
+      if (isCurrentlySelected) {
+        // Si ya está seleccionada y es la única, NO HACEMOS NADA
+        if (prev.length === 1) return prev;
+        // Si hay más de una, la quitamos
+        return prev.filter(i => i !== id);
       } else {
-        return [...next, id];
+        // Si no está seleccionada, la añadimos
+        return [...prev, id];
       }
     });
   };
