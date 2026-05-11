@@ -23,6 +23,8 @@ import Configuracion from "./pages/Configuracion/index";
 import Compras from "./pages/Compras/index";
 import ContarInventario from "./pages/ContarInventario/index";
 import Proveedores from "./pages/Proveedores/index";
+import Facturas from "./pages/facturas/index";
+import InvoiceDetail from "./pages/facturas/InvoiceDetail";
 import ExecutiveOverview from "./pages/Reportes/ExecutiveOverview/index";
 import LossControl from "./pages/Reportes/LossControl/index";
 import OperationalEfficiency from "./pages/Reportes/OperationalEfficiency/index";
@@ -69,6 +71,8 @@ function App() {
                       <Route path="/compras" element={<Compras />} />
                       <Route path="/proveedores" element={<Proveedores />} />
                       <Route path="/contar-inventario" element={<ContarInventario />} />
+                      <Route path="/facturas" element={<Facturas />} />
+                      <Route path="/facturas/:id" element={<InvoiceDetail />} />
                       <Route path="/reportes/panel-ejecutivo" element={<PanelEjecutivo />} />
                       <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
                       <Route path="/reportes/control-perdidas" element={<LossControl />} />

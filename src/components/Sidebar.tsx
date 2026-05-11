@@ -7,7 +7,7 @@ import {
   CalendarDays, ChevronLeft, ChevronRight, 
   Bell, AlertTriangle,
   ShoppingCart, ClipboardCheck, X, Truck,
-  LayoutDashboard, ChevronDown, BarChart3, DollarSign
+  LayoutDashboard, ChevronDown, BarChart3, DollarSign, FileText
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -22,6 +22,7 @@ const menuItems = [
   { path: "/eventos", label: "Eventos", icon: CalendarDays },
   { path: "/proyeccion", label: "Proyección", icon: TrendingUp },
   { path: "/historial", label: "Historial", icon: History },
+  { path: "/facturas", label: "Facturas", icon: FileText },
 ];
 
 interface SidebarProps {
