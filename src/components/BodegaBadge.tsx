@@ -9,7 +9,7 @@ interface BodegaBadgeProps {
 }
 
 export default function BodegaBadge({ nombre, color, icono, className }: BodegaBadgeProps) {
-  const label = nombre.replace("Bodega ", "");
+  const label = (typeof nombre === "string") ? nombre.replace("Bodega ", "") : "S/N";
   
   // Si no hay color, usar lógica anterior como fallback
   const isTransito = nombre.includes("Tránsito");

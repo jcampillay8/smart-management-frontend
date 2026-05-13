@@ -13,7 +13,7 @@ import { useProveedores } from "../Proveedores/useProveedores";
 import { Categoria, Producto } from "./types";
 import BodegaBadge from "../../components/BodegaBadge";
 import { BarcodeScanner } from "../../components/BarcodeScanner";
-import { Camera, DollarSign } from "lucide-react";
+import { Camera, DollarSign, AlertTriangle } from "lucide-react";
 
 interface ProductoDialogProps {
   open: boolean;
@@ -54,6 +54,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
   const [bodegaCoordNumero, setBodegaCoordNumero] = useState<Record<string, string>>({});
   const [factorConversion, setFactorConversion] = useState("1");
   const [unidadConversion, setUnidadConversion] = useState("mL");
+  const [diasAlertaVencimiento, setDiasAlertaVencimiento] = useState("15");
 
   useEffect(() => {
     if (open) {
@@ -82,6 +83,9 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         setBodegaMinimos(mins);
         setBodegaCoordLetra(coordL);
         setBodegaCoordNumero(coordN);
+        setFactorConversion(editingProduct.factor_conversion ? String(editingProduct.factor_conversion) : "1");
+        setUnidadConversion(editingProduct.unidad_conversion ?? "mL");
+        setDiasAlertaVencimiento(String(editingProduct.dias_alerta_vencimiento ?? 15));
       } else {
         resetForm();
       }
@@ -113,6 +117,9 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
     setBodegaMinimos(mins);
     setBodegaCoordLetra(coordL);
     setBodegaCoordNumero(coordN);
+    setFactorConversion("1");
+    setUnidadConversion("mL");
+    setDiasAlertaVencimiento("15");
   };
 
   const handleSave = async () => {
@@ -140,6 +147,9 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         codigo_barra: codigoBarra.trim() || null,
         sku: sku.trim() || null,
         imagen_url: imagenUrl,
+        factor_conversion: Number(factorConversion) || 1,
+        unidad_conversion: unidad === "unidad" ? unidadConversion : null,
+        dias_alerta_vencimiento: Number(diasAlertaVencimiento) || 0,
         bodegas_config: selectedBodegaIds.map(bid => ({
           bodega_id: bid,
           stock_minimo: Number(bodegaMinimos[bid] ?? 0),
@@ -189,10 +199,10 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
           </div>
 
           {/* PRECIO DE VENTA — Opcional */}
-          <div className="border rounded-xl p-4 bg-indigo-50/50 dark:bg-indigo-950/20 space-y-2">
+          <div className="border rounded-xl p-4 bg-blue-500/5 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20 space-y-2">
             <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-indigo-500" />
-              <Label className="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+              <DollarSign className="h-4 w-4 text-blue-500" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">
                 Precio de Venta{" "}
                 <span className="text-muted-foreground font-normal normal-case tracking-normal text-xs">(opcional)</span>
               </Label>
@@ -203,7 +213,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
               onFocus={e => e.target.select()}
               onChange={e => setPrecioVenta(e.target.value)}
               placeholder="Sin definir — se podrá agregar al registrar compras"
-              className="h-10 font-bold border-indigo-300 dark:border-indigo-700 focus:border-indigo-500"
+              className="h-10 font-bold border-blue-200 dark:border-blue-500/30 focus:border-blue-500 bg-background/50"
             />
             <p className="text-[10px] text-muted-foreground">
               El costo unitario se actualizará automáticamente al escanear facturas de compra.
@@ -298,27 +308,57 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
             </div>
           )}
 
+          {/* Días de Alerta de Vencimiento */}
+          <div className="border border-orange-200 dark:border-orange-500/30 bg-orange-500/5 dark:bg-orange-500/10 rounded-xl p-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-orange-500" />
+              <Label className="text-[10px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-300">
+                Alerta de Vencimiento Anticipada
+              </Label>
+            </div>
+            <div className="flex items-center gap-3">
+              <Input
+                type="number"
+                min="0"
+                value={diasAlertaVencimiento}
+                onChange={e => setDiasAlertaVencimiento(e.target.value)}
+                className="h-10 w-24 font-bold border-orange-200 dark:border-orange-500/30 focus:border-orange-500 bg-background/50"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                El sistema mostrará advertencias (color naranja parpadeante) <span className="font-bold text-orange-700 dark:text-orange-300">{diasAlertaVencimiento} días antes</span> de que el producto venza.
+              </p>
+            </div>
+          </div>
+
           {/* Proveedor + Código de barra */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Proveedor (opcional)</Label>
-              <Input value={proveedor} onChange={e => setProveedor(e.target.value)}
-                placeholder="Ej: Distribuidora ABC" list="provider-suggestions" />
-              <datalist id="provider-suggestions">
-                {proveedores.map(p => <option key={p.id} value={p.nombre_empresa} />)}
-              </datalist>
+              <Select value={proveedor} onValueChange={setProveedor}>
+                <SelectTrigger className="h-10 bg-background border rounded-xl">
+                  <SelectValue placeholder="Seleccionar proveedor..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin proveedor</SelectItem>
+                  {proveedores.map(p => (
+                    <SelectItem key={p.id} value={p.nombre_empresa}>{p.nombre_empresa}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
-              <Label>Código de barra</Label>
-              <div className="relative">
-                <Input value={codigoBarra} onChange={e => setCodigoBarra(e.target.value)}
-                  placeholder="Escanear o ingresar..." />
-                <Button variant="ghost" size="icon"
-                  className="absolute right-1 top-1 h-7 w-7 text-primary hover:bg-primary/10"
-                  onClick={() => setShowScanner(true)}>
-                  <Camera className="h-4 w-4" />
+              <div className="flex items-center justify-between">
+                <Label>Código de Barra</Label>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowScanner(true)}>
+                  <Camera className="h-3.5 w-3.5" />
                 </Button>
               </div>
+              <Input 
+                value={codigoBarra} 
+                onChange={e => setCodigoBarra(e.target.value)} 
+                placeholder="Escanea o escribe..."
+                className="h-10 font-mono text-xs" 
+              />
             </div>
           </div>
         </div>

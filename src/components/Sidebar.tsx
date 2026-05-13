@@ -28,11 +28,12 @@ const menuItems = [
 interface SidebarProps {
   logo: string | null;
   name?: string;
+  tipoNegocio?: string | null;
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
@@ -73,72 +74,87 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
 
   const sidebarContent = (
     <>
-      <div className="p-6 flex items-center justify-between gap-2 min-w-0 border-b border-border/50">
-        <AnimatePresence mode="wait">
-          {(!isCollapsed || isOpen) && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="flex items-center gap-3 min-w-0 flex-1"
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                {logo ? (
-                  <img 
-                    src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
-                    className="h-full w-full object-contain p-1" 
-                    alt="Logo" 
-                  />
-                ) : (
-                  <Package className="h-5 w-5 text-primary" />
-                )}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-black text-sm leading-tight tracking-tighter uppercase whitespace-pre-wrap break-words">
-                  {name || "SIOCI"}
-                </span>
-              </div>
-            </motion.div>
-          )}
-          {isCollapsed && !isOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mx-auto"
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shadow-sm">
-                {logo ? (
-                  <img 
-                    src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
-                    className="h-full w-full object-contain p-1" 
-                    alt="Logo" 
-                  />
-                ) : (
-                  <Package className="h-5 w-5 text-primary" />
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Toggle Button for Desktop */}
-        <button 
+      <div className="relative px-5 flex items-center h-[89px] flex-none border-b border-border/50 overflow-hidden group/header">
+        {/* Toggle Button - Synchronized Animation */}
+        <motion.button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex h-7 w-7 rounded-lg hover:bg-secondary items-center justify-center transition-colors border border-transparent hover:border-border shrink-0 ml-2"
+          initial={false}
+          animate={{ 
+            right: isCollapsed && !isOpen ? 20 : 12,
+            backgroundColor: isCollapsed && !isOpen ? "rgba(var(--primary-rgb), 0.1)" : "rgba(var(--secondary-rgb), 0.5)",
+            width: isCollapsed && !isOpen ? 40 : 32,
+            height: isCollapsed && !isOpen ? 40 : 32,
+            borderRadius: isCollapsed && !isOpen ? "0.75rem" : "0.5rem",
+          }}
+          className={cn(
+            "absolute hidden md:flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100 z-50 text-primary border border-border/50 backdrop-blur-sm",
+            !isCollapsed && "text-muted-foreground hover:text-foreground hover:bg-secondary"
+          )}
         >
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={18} />}
+        </motion.button>
 
-        {/* Close Button for Mobile */}
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className={cn(
+            "h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative transition-opacity duration-300",
+            isCollapsed && !isOpen && "group-hover:opacity-0"
+          )}>
+            {logo ? (
+              <img 
+                src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
+                className="h-full w-full object-contain p-1" 
+                alt="Logo" 
+              />
+            ) : (
+              <Package className="h-5 w-5 text-primary" />
+            )}
+          </div>
+          
+          <AnimatePresence>
+            {(!isCollapsed || isOpen) && (
+              <motion.div
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -5 }}
+                className="flex flex-col min-w-0 overflow-hidden"
+              >
+                {(() => {
+                  const n = name || "SIOCI";
+                  
+                  if (tipoNegocio) {
+                    return (
+                      <div className="flex flex-col -space-y-0.5">
+                        <span className="text-[9px] font-semibold text-primary uppercase tracking-[0.15em] leading-none">
+                          {tipoNegocio}
+                        </span>
+                        <span className="font-bold text-sm tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                          {n}
+                        </span>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <span className="font-bold text-sm leading-tight tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                      {n}
+                    </span>
+                  );
+                })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        
+        {/* Close Button for Mobile (always visible on mobile) */}
         <button 
           onClick={onClose}
-          className="md:hidden h-8 w-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors border border-border"
+          className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors border border-border"
         >
           <X size={18} />
         </button>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 mt-2 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-2 space-y-1 mt-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {menuItems.map((item) => {
           const isActive = item.exact
             ? location.pathname === item.path
@@ -149,13 +165,13 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+                "flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden",
                 isActive 
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
                   : "hover:bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >
-              <div className="relative shrink-0">
+              <div className="relative shrink-0 w-10 flex justify-center">
                 <item.icon size={20} className={cn(
                   isActive ? "text-primary-foreground" : "group-hover:text-primary transition-colors"
                 )} />
@@ -192,13 +208,22 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border mt-auto bg-background/50 flex flex-col gap-2">
-        {(!isCollapsed || isOpen) && (
-          <div className="flex items-center justify-between px-2">
-            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">EasyStock v1.0</span>
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-        )}
+      <div className="p-4 border-t border-border mt-auto bg-background/50 h-[53px] flex items-center overflow-x-hidden overflow-y-hidden shrink-0">
+        <AnimatePresence>
+          {(!isCollapsed || isOpen) && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-between w-full px-2"
+            >
+              <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest whitespace-nowrap">
+                EasyStock v1.0
+              </span>
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse cosmic-star shrink-0 ml-2" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
@@ -215,7 +240,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 md:hidden"
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] md:hidden"
             />
             {/* Sidebar */}
             <motion.aside
@@ -223,7 +248,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 bottom-0 w-[280px] bg-background border-r border-border z-50 md:hidden flex flex-col shadow-2xl"
+              className="fixed left-0 top-0 bottom-0 w-[280px] bg-background border-r border-border z-[100] md:hidden flex flex-col shadow-2xl"
             >
               {sidebarContent}
             </motion.aside>
@@ -234,7 +259,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
       {/* Desktop Sidebar */}
       <motion.aside
         animate={{ width: isCollapsed ? 80 : 260 }}
-        className="hidden md:flex flex-col h-screen glass border-r border-border sticky top-0 z-40 transition-all duration-300 ease-in-out"
+        className="hidden md:flex flex-col h-screen glass border-r border-border sticky top-0 z-40 overflow-hidden group"
       >
         {sidebarContent}
       </motion.aside>

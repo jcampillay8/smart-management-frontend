@@ -13,7 +13,8 @@ export interface Producto {
   categoria_id: string;
   unidad: string;
   stock_minimo: number;
-  codigo_barra?: string;
+  sku?: string;
+  dias_alerta_vencimiento?: number;
   bodegas_config?: { bodega_id: string; stock_minimo: number }[];
 }
 

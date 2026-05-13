@@ -11,7 +11,14 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
   const [allRecetas, setAllRecetas] = useState<Receta[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const saved = localStorage.getItem("consumo_cart");
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("consumo_cart", JSON.stringify(cart));
+  }, [cart]);
   const [stockByProduct, setStockByProduct] = useState<Record<string, number>>({});
   const [lotsByProduct, setLotsByProduct] = useState<Record<string, { fecha_vencimiento: string; cantidad: number }[]>>({});
   const [consumptionLog, setConsumptionLog] = useState<ConsumptionRecord[]>([]);
@@ -71,8 +78,14 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
   };
 
   useEffect(() => {
+    if (bodegaId === "none") {
+      setStockByProduct({});
+      setLotsByProduct({});
+      setLoading(false);
+      return;
+    }
     loadData();
-  }, [bodegaId]);
+  }, [bodegaId, areaId]);
 
   const recetas = useMemo(() => {
     if (!areaId) return allRecetas;
@@ -81,6 +94,35 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
 
   const getStock = (productoId: string): number => {
     return stockByProduct[productoId] ?? 0;
+  };
+
+  const getAlertStatus = (productoId: string): "normal" | "warning" | "critical" => {
+    const stock = getStock(productoId);
+    const prod = productos.find(p => p.id === productoId);
+    const min = prod?.stock_minimo ?? 0;
+    const threshold = prod?.dias_alerta_vencimiento ?? 15;
+    
+    if (stock <= 0) return "critical";
+    
+    // Revisar lotes para vencimiento
+    const lots = lotsByProduct[productoId] ?? [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    let hasExpired = false;
+    let isSoon = false;
+    
+    lots.forEach(l => {
+      if (!l.fecha_vencimiento) return;
+      const target = new Date(l.fecha_vencimiento + "T00:00:00");
+      const diffDays = Math.ceil((target.getTime() - today.getTime()) / (1000 * 3600 * 24));
+      if (diffDays < 0) hasExpired = true;
+      else if (diffDays <= threshold) isSoon = true;
+    });
+    
+    if (hasExpired) return "critical";
+    if (isSoon || stock <= min) return "warning";
+    return "normal";
   };
 
   const filteredProducts = useMemo(() => {
@@ -105,7 +147,7 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
     return categoriasRecetas
       .map(c => ({
         ...c,
-        recetas: recetas.filter(r => r.categoria_id === c.id),
+        recetas: recetas.filter(r => r.categoria_receta_id === c.id),
       }))
       .filter(c => c.recetas.length > 0);
   }, [categoriasRecetas, recetas]);
@@ -123,7 +165,8 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
         type, 
         quantity: 1, 
         name: item.nombre, 
-        unit: type === "producto" ? item.unidad : "serv."
+        unit: type === "producto" ? item.unidad : "serv.",
+        price: type === "producto" ? (item.precio_venta || item.costo_unitario) : item.precio
       }];
     });
     toast.success(`${item.nombre} agregado`);
@@ -138,8 +181,8 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
     setCart(prev => prev.map(i => i.id === id && i.type === type ? { ...i, quantity: qty } : i));
   };
 
-  const refreshLog = () => {
-    loadData();
+  const refreshLog = async () => {
+    await loadData();
   };
 
   const updateConsumo = async (recordId: string, data: { cantidad: number; motivo_merma?: string; descripcion_merma?: string }) => {
@@ -164,6 +207,20 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
     }
   };
 
+  const getRecipeAvailability = (recetaId: string): number => {
+    const receta = allRecetas.find(r => r.id === recetaId);
+    if (!receta || !receta.ingredientes?.length) return 0;
+    
+    let minAvailability = Infinity;
+    receta.ingredientes.forEach(ing => {
+      const stock = getStock(ing.producto_id);
+      const possible = Math.floor(stock / ing.cantidad);
+      if (possible < minAvailability) minAvailability = possible;
+    });
+    
+    return minAvailability === Infinity ? 0 : minAvailability;
+  };
+
   return {
     productos: filteredProducts,
     categorias,
@@ -178,6 +235,8 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
     removeFromCart,
     updateQuantity,
     getStock,
+    getAlertStatus,
+    getRecipeAvailability,
     groupedProducts,
     groupedRecetas,
     consumptionLog,
@@ -185,4 +244,4 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
     updateConsumo,
     deleteConsumo,
   };
-}
+}

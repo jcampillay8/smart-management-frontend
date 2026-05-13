@@ -30,7 +30,7 @@ export default function ConfiguracionPage() {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   const sections = [
-    { id: "restaurante", label: "Restaurante", icon: Store, component: <RestauranteConfig settings={settings} onUpdate={refresh} /> },
+    { id: "negocio", label: "Negocio", icon: Store, component: <RestauranteConfig settings={settings} onUpdate={refresh} /> },
     { id: "bodegas", label: "Bodegas", icon: Warehouse, component: <BodegasConfig /> },
     { id: "areas", label: "Áreas Operativas", icon: Layers, component: <AreasOperativasConfig /> },
     { id: "usuarios", label: "Usuarios y Roles", icon: Users, component: <UsuariosRoles users={users} currentUser={user} onUpdateRole={updateRole} onCreateUser={createUser} onDeleteUser={deleteUser} /> },

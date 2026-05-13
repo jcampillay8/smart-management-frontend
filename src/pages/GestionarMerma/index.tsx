@@ -43,16 +43,15 @@ export default function GestionarMerma() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <TrendingDown className="h-6 w-6 text-destructive" /> Gestión de Mermas
-          </h1>
-          <p className="text-muted-foreground text-sm">Control y análisis de pérdidas de inventario</p>
+      <div className="bg-card backdrop-blur-md p-4 rounded-2xl border border-input shadow-xl">
+        <div className="flex justify-end">
+          <Button 
+            onClick={() => setRegisterOpen(true)} 
+            className="h-10 px-4 gap-2 rounded-xl bg-destructive hover:bg-destructive/90 text-white shadow-lg shadow-destructive/10 transition-all active:scale-95 font-black text-[10px] uppercase tracking-widest"
+          >
+            <Plus className="h-4 w-4" /> Registrar Merma
+          </Button>
         </div>
-        <Button onClick={() => setRegisterOpen(true)} className="bg-destructive hover:bg-destructive/90 gap-2">
-          <Plus className="h-4 w-4" /> Registrar Merma
-        </Button>
       </div>
 
       <MermaStats
@@ -64,27 +63,32 @@ export default function GestionarMerma() {
         getMermaLevel={getMermaLevel}
       />
 
-      <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
-        <div className="p-4 border-b bg-muted/30 flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="bg-card rounded-2xl border border-input shadow-xl overflow-hidden">
+        <div className="p-4 border-b bg-card flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative flex-1 w-full sm:max-w-md group">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 p-1 rounded-lg bg-primary/10 transition-colors group-focus-within:bg-primary/20">
+              <Search className="h-3.5 w-3.5 text-primary" />
+            </div>
             <Input 
               placeholder="Buscar por producto..." 
-              className="pl-9 h-9" 
+              className="pl-10 h-10 bg-background border-input rounded-xl text-sm font-medium transition-all focus:ring-primary/20 w-full" 
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TIME_RANGES.map(r => (
-                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          
+          <div className="bg-muted/50 p-1 rounded-xl border border-input shadow-inner">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="h-9 w-40 bg-transparent border-0 shadow-none focus:ring-0 font-bold text-[10px] uppercase tracking-widest">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIME_RANGES.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <MermaHistory 

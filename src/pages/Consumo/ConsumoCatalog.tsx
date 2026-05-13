@@ -18,6 +18,8 @@ interface CatalogProps {
   groupedItems: any[];
   onAdd: (item: any, type: "producto" | "receta") => void;
   getStock: (productoId: string) => number;
+  getAlertStatus: (productoId: string) => "normal" | "warning" | "critical";
+  getRecipeAvailability: (recetaId: string) => number;
   viewMode: "productos" | "recetas";
 }
 
@@ -30,6 +32,8 @@ export function ConsumoCatalog({
   groupedItems,
   onAdd, 
   getStock,
+  getAlertStatus,
+  getRecipeAvailability,
   viewMode
 }: CatalogProps) {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
@@ -59,10 +63,8 @@ export function ConsumoCatalog({
 
   const finalProds = viewMode === "productos" ? filteredItems.flatMap(cat => cat.productos || []).filter(p => !busqueda || p.nombre.toLowerCase().includes(busqueda.toLowerCase())) : [];
 
-  const getStockStatus = (stock: number, min: number) => {
-    if (stock === 0) return "empty";
-    if (stock <= min) return "low";
-    return "normal";
+  const getStockStatus = (productoId: string) => {
+    return getAlertStatus(productoId);
   };
 
   return (
@@ -88,14 +90,14 @@ export function ConsumoCatalog({
         {viewMode === "productos" ? (
           finalProds.map(p => {
             const stock = getStock(p.id);
-            const status = getStockStatus(stock, p.stock_minimo);
+            const status = getStockStatus(p.id);
             return (
               <div 
                 key={p.id} 
                 className={cn(
                   "group relative aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border bg-card transition-all cursor-pointer active:scale-95 shadow-sm hover:shadow-md",
-                  status === "empty" && "border-destructive/30 bg-destructive/5",
-                  status === "low" && "border-amber-400/30 bg-amber-500/5",
+                  status === "critical" && "border-destructive animate-blink-red bg-destructive/5",
+                  status === "warning" && "border-orange-500 animate-blink-orange bg-orange-500/5",
                   status === "normal" && "hover:border-primary/50"
                 )} 
                 onClick={() => onAdd(p, "producto")}
@@ -113,7 +115,7 @@ export function ConsumoCatalog({
                 </p>
                 <div className={cn(
                   "absolute -top-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-black shadow-sm",
-                  status === "empty" ? "bg-destructive text-white" : status === "low" ? "bg-amber-500 text-white" : "bg-secondary text-muted-foreground"
+                  status === "critical" ? "bg-destructive text-white" : status === "warning" ? "bg-orange-500 text-white" : "bg-secondary text-muted-foreground"
                 )}>
                   {stock}
                 </div>
@@ -121,25 +123,34 @@ export function ConsumoCatalog({
             );
           })
         ) : (
-          filteredRecs.map(r => (
-            <div 
-              key={r.id} 
-              className="group relative aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border bg-card transition-all cursor-pointer active:scale-95 shadow-sm hover:shadow-md hover:border-primary/50" 
-              onClick={() => onAdd(r, "receta")}
-            >
-              {r.imagen_url ? (
-                <img src={r.imagen_url} alt="" className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover mb-1 group-hover:scale-110 transition-transform" />
-              ) : (
-                <CookingPot className="h-8 w-8 mb-1 text-muted-foreground/50" />
-              )}
-              <p className="text-[10px] md:text-[11px] font-black uppercase text-center leading-tight line-clamp-2 px-1">
-                {r.nombre}
-              </p>
-              <div className="absolute -top-1 -right-1 px-2 py-0.5 rounded-full bg-primary text-white text-[9px] font-black shadow-sm">
-                REC
+          filteredRecs.map(r => {
+            const availability = getRecipeAvailability(r.id);
+            return (
+              <div 
+                key={r.id} 
+                className="group relative aspect-square flex flex-col items-center justify-center p-2 rounded-2xl border bg-card transition-all cursor-pointer active:scale-95 shadow-sm hover:shadow-md hover:border-primary/50" 
+                onClick={() => onAdd(r, "receta")}
+              >
+                {r.imagen_url ? (
+                  <img src={r.imagen_url} alt="" className="h-10 w-10 md:h-12 md:w-12 rounded-xl object-cover mb-1 group-hover:scale-110 transition-transform" />
+                ) : (
+                  <CookingPot className="h-8 w-8 mb-1 text-muted-foreground/50" />
+                )}
+                <p className="text-[10px] md:text-[11px] font-black uppercase text-center leading-tight line-clamp-2 px-1">
+                  {r.nombre}
+                </p>
+                <p className="text-[9px] font-bold text-muted-foreground/70 mt-0.5">
+                  {formatMoney(r.precio)}
+                </p>
+                <div className={cn(
+                  "absolute -top-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-black shadow-sm",
+                  availability > 0 ? "bg-primary text-white" : "bg-destructive text-white"
+                )}>
+                  {availability}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
       {(viewMode === "productos" ? finalProds.length === 0 : filteredRecs.length === 0) && (

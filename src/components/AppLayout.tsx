@@ -7,9 +7,10 @@ import api from "../lib/api";
 
 export default function AppLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [restaurantConfig, setRestaurantConfig] = useState<{ nombre: string; logo_url: string | null }>({
+  const [restaurantConfig, setRestaurantConfig] = useState<{ nombre: string; logo_url: string | null; tipo_negocio: string | null }>({
     nombre: "EasyStock Control",
-    logo_url: null
+    logo_url: null,
+    tipo_negocio: null
   });
 
   useEffect(() => {
@@ -29,10 +30,11 @@ export default function AppLayout() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
+    <div className="flex min-h-screen bg-background text-foreground overflow-x-hidden">
       <Sidebar 
         logo={restaurantConfig.logo_url} 
         name={restaurantConfig.nombre}
+        tipoNegocio={restaurantConfig.tipo_negocio}
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
       />

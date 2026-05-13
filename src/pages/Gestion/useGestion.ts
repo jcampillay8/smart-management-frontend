@@ -4,7 +4,7 @@ import api from "../../lib/api";
 import { toast } from "sonner";
 import { Categoria, CategoriaReceta, Producto, Receta, ViewTab } from "./types";
 
-export function useGestion() {
+export function useGestion(areaId: string | null = null) {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [categoriasRecetas, setCategoriasRecetas] = useState<CategoriaReceta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -20,7 +20,7 @@ export function useGestion() {
       const [catRes, prodRes, recRes, catRecRes, mermasRes] = await Promise.all([
         api.get("/inventory/categories"),
         api.get("/inventory/products"),
-        api.get("/operations/recipes"),
+        api.get(`/operations/recipes${areaId ? `?area_id=${areaId}` : ""}`),
         api.get("/operations/recipes/categories"),
         api.get("/inventory/history?tipo_movimiento=merma"),
       ]);
@@ -37,7 +37,7 @@ export function useGestion() {
     }
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData, areaId]);
 
   // Category CRUD
   const createCategory = async (nombre: string) => {

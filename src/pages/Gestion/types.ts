@@ -37,6 +37,8 @@ export interface Producto {
   unidad_conversion?: string | null;
   marca?: string | null;
   proveedor?: string | null;
+  sku?: string | null;
+  dias_alerta_vencimiento?: number;
   bodegas_config: { bodega_id: string; stock_minimo: number }[];
 }
 
@@ -48,7 +50,14 @@ export interface Receta {
   iva_porcentaje?: number;
   imagen_url?: string | null;
   categoria_receta_id?: string | null;
-  ingredientes: { id?: string; producto_id: string; bodega_id: string; cantidad: number }[];
+  areas_operativas_ids?: string[];
+  ingredientes: { id?: string; producto_id: string; bodega_id: string; cantidad: number; nombre_producto?: string; unidad?: string }[];
+  
+  // Campos dinámicos de Gestión
+  disponibilidad_por_bodega?: { bodega_id: string; bodega_nombre: string; cantidad: number }[];
+  consumo_diario?: number;
+  consumo_semanal?: number;
+  consumo_mensual?: number;
 }
 
 export type ViewTab = "productos" | "recetas" | "compras" | "mermas";

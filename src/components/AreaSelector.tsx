@@ -9,8 +9,14 @@ interface AreaSelectorProps {
 }
 
 export function AreaSelector({ className, buttonClassName }: AreaSelectorProps) {
-  const { areas, selectedAreaId, setSelectedAreaId, selectedArea } = useAreaOperativa();
+  const { areas, selectedAreaId, setSelectedAreaId, selectedArea, loading } = useAreaOperativa();
   const [open, setOpen] = useState(false);
+
+  if (loading) {
+    return (
+      <div className={cn("h-10 min-w-[180px] rounded-2xl bg-secondary/30 animate-pulse border border-border/50", buttonClassName)} />
+    );
+  }
 
   if (areas.length <= 1) return null;
 

@@ -72,6 +72,46 @@
     --input: 215 28% 17%;
     --ring: 161 72% 45%;
   }
+
+  /* ─── Cosmic Blue Theme ─────────────────────────────────────────────────── */
+  .cosmic-blue {
+    --background: 222 47% 7%;
+    --foreground: 210 100% 92%;
+
+    --card: 220 40% 10%;
+    --card-foreground: 210 100% 92%;
+
+    --popover: 220 40% 10%;
+    --popover-foreground: 210 100% 92%;
+
+    /* Cyan/teal primary — the "cosmic glow" */
+    --primary: 186 100% 50%;
+    --primary-foreground: 222 47% 7%;
+
+    --secondary: 220 35% 16%;
+    --secondary-foreground: 210 100% 92%;
+
+    --muted: 220 35% 14%;
+    --muted-foreground: 213 50% 65%;
+
+    --accent: 220 35% 16%;
+    --accent-foreground: 186 100% 70%;
+
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 210 100% 95%;
+
+    --success: 152 80% 50%;
+    --success-foreground: 222 47% 7%;
+
+    --warning: 42 100% 58%;
+    --warning-foreground: 222 47% 7%;
+
+    --border: 220 40% 18%;
+    --input: 220 40% 18%;
+    --ring: 186 100% 50%;
+
+    --radius: 0.75rem;
+  }
 }
 
 @layer base {
@@ -88,6 +128,15 @@
     background-image: radial-gradient(at 0% 0%, hsla(161, 72%, 38%, 0.1) 0, transparent 50%),
                       radial-gradient(at 100% 0%, hsla(224, 71%, 4%, 0.1) 0, transparent 50%);
   }
+
+  /* Cosmic Blue: animated nebula background layers */
+  .cosmic-blue body {
+    background-image:
+      radial-gradient(ellipse at 10% 20%, hsla(186, 100%, 50%, 0.10) 0, transparent 45%),
+      radial-gradient(ellipse at 85% 10%, hsla(258, 80%, 60%, 0.10) 0, transparent 40%),
+      radial-gradient(ellipse at 50% 90%, hsla(152, 80%, 50%, 0.07) 0, transparent 45%),
+      radial-gradient(ellipse at 90% 70%, hsla(186, 100%, 50%, 0.06) 0, transparent 35%);
+  }
 }
 
 /* Glassmorphism utility */
@@ -95,6 +144,102 @@
   @apply bg-white/70 dark:bg-black/40 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl;
 }
 
+/* Cosmic Blue glass override */
+.cosmic-blue .glass {
+  background: hsla(220, 40%, 10%, 0.75);
+  border: 1px solid hsla(186, 100%, 50%, 0.14);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 32px hsla(186, 100%, 50%, 0.07),
+              0 1px 0 hsla(186, 100%, 80%, 0.05) inset;
+}
+
 .glass-card {
   @apply glass hover:bg-white/80 dark:hover:bg-black/50 transition-all duration-300;
+}
+
+:root {
+  --blink-rest: #ffffff;
+}
+
+.dark {
+  --blink-rest: hsl(224, 71%, 4%);
+}
+
+.cosmic-blue {
+  --blink-rest: hsl(222, 47%, 7%);
+}
+
+@keyframes blink-orange {
+  0%, 100% { border-color: var(--blink-rest); }
+  50% { border-color: hsl(38, 92%, 50%); box-shadow: 0 0 8px hsla(38, 92%, 50%, 0.4); }
+}
+
+@keyframes blink-red {
+  0%, 100% { border-color: var(--blink-rest); }
+  50% { border-color: hsl(0, 84%, 60%); box-shadow: 0 0 10px hsla(0, 84%, 60%, 0.5); }
+}
+
+.animate-blink-orange {
+  animation: blink-orange 2.0s ease-in-out infinite;
+  border-width: 2px !important;
+}
+
+.animate-blink-red {
+  animation: blink-red 2.0s ease-in-out infinite;
+  border-width: 2px !important;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; background-color: rgba(239, 68, 68, 0.15); }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
+
+/* ─── Cosmic Blue Keyframes ──────────────────────────────────────────────── */
+
+/* Soft cyan glow pulse — used on active nav items */
+@keyframes cosmic-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 6px hsla(186, 100%, 50%, 0.3),
+                0 0 16px hsla(186, 100%, 50%, 0.12);
+  }
+  50% {
+    box-shadow: 0 0 14px hsla(186, 100%, 50%, 0.55),
+                0 0 32px hsla(186, 100%, 50%, 0.22),
+                0 0 56px hsla(186, 100%, 50%, 0.10);
+  }
+}
+
+/* Star twinkle — small decorative dots */
+@keyframes cosmic-star-twinkle {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  40%       { opacity: 0.4; transform: scale(0.75); }
+  70%       { opacity: 0.9; transform: scale(1.15); }
+}
+
+/* Aurora border color cycle */
+@keyframes cosmic-aurora-shimmer {
+  0%   { border-color: hsla(186, 100%, 50%, 0.30); }
+  33%  { border-color: hsla(258, 80%, 70%, 0.25);  }
+  66%  { border-color: hsla(152, 80%, 55%, 0.25);  }
+  100% { border-color: hsla(186, 100%, 50%, 0.30); }
+}
+
+/* Active nav item glows in Cosmic Blue */
+.cosmic-blue a.bg-primary {
+  animation: cosmic-glow-pulse 3s ease-in-out infinite;
+}
+
+/* Status dot twinkles like a star */
+.cosmic-blue .cosmic-star {
+  animation: cosmic-star-twinkle 2.8s ease-in-out infinite;
+}
+
+/* Cards get aurora border shimmer on hover */
+.cosmic-blue .glass:hover,
+.cosmic-blue .glass-card:hover {
+  animation: cosmic-aurora-shimmer 4s linear infinite;
 }

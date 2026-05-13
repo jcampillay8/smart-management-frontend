@@ -1,5 +1,6 @@
 // src/pages/Gestion/CategoriaSeccion.tsx - Fixed imports
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlarmClock,
   Archive,
@@ -83,7 +84,12 @@ import {
   Warehouse,
   Wheat,
   Wine,
-  Zap
+  Zap,
+  Shrimp,
+  Container,
+  Waves,
+  Bean,
+  Cylinder
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -101,145 +107,81 @@ const ICON_MAP: Record<string, any> = {
   Box, Archive, Sparkles, Bed, Lamp, Brush, ConciergeBell, Tag, ShoppingBag, Store,
   Beef, Drumstick, Fish, Salad, Sprout, Apple, Banana, Cherry, Citrus, Grape,
   Leaf, Milk, Sandwich, Soup, Egg, Carrot, Wine, Beer, GlassWater, IceCream,
-  Cake, Lollipop, Wheat, Droplet, Snowflake, Pizza, Martini, Zap, Croissant
+  Cake, Lollipop, Wheat, Droplet, Snowflake, Pizza, Martini, Zap, Croissant,
+  Shrimp, Container, Cookie, Waves, Bean, Cylinder
 };
 
 const CATEGORIZED_ICONS = [
   {
-    group: "Alimentos principales",
+    group: "🍽️ Alimentos",
     icons: [
-      { id: "Beef", icon: Beef, label: "Carne" },
-      { id: "Drumstick", icon: Drumstick, label: "Pollo" },
-      { id: "Fish", icon: Fish, label: "Pescado" },
-      { id: "Pizza", icon: Pizza, label: "Pizza" },
-      { id: "Salad", icon: Salad, label: "Ensalada" },
-      { id: "Soup", icon: Soup, label: "Sopa" },
-      { id: "Sandwich", icon: Sandwich, label: "Sandwich" },
-      { id: "Ham", icon: Ham, label: "Cerdo" },
-      { id: "ChefHat", icon: ChefHat, label: "Gourmet" },
-      { id: "CookingPot", icon: CookingPot, label: "Casera" },
-      { id: "Flame", icon: Flame, label: "Parrilla" },
-      { id: "Zap", icon: Zap, label: "Comida rápida" },
-      { id: "Leaf", icon: Leaf, label: "Vegetariano" },
-      { id: "Sprout", icon: Sprout, label: "Vegano" },
-      { id: "Wheat", icon: Wheat, label: "Pasta/Cereales" },
-      { id: "Wheat", icon: Wheat, label: "Arroz" },
-    ]
-  },
-
-  {
-    group: "Desayuno / Cafetería",
-    icons: [
-      { id: "Coffee", icon: Coffee, label: "Café" },
-      { id: "Croissant", icon: Croissant, label: "Pan/Bollería" },
-      { id: "Egg", icon: Egg, label: "Huevo/Desayuno" },
-      { id: "Cake", icon: Cake, label: "Pastelería" },
-      { id: "Milk", icon: Milk, label: "Lácteos" },
-      { id: "Cookie", icon: Cookie, label: "Galletas" },
-      { id: "CupSoda", icon: CupSoda, label: "Bebidas frías" },
-      { id: "Donut", icon: Donut, label: "Donas" },
-      { id: "Candy", icon: Candy, label: "Snacks dulces" },
-    ]
-  },
-
-  {
-    group: "Bebidas",
-    icons: [
-      { id: "GlassWater", icon: GlassWater, label: "Agua/Gaseosa" },
-      { id: "Beer", icon: Beer, label: "Cerveza" },
-      { id: "Wine", icon: Wine, label: "Vino" },
-      { id: "Martini", icon: Martini, label: "Cocktail" },
-      { id: "Coffee", icon: Coffee, label: "Café" },
-      { id: "Citrus", icon: Citrus, label: "Jugos" },
-      { id: "CupSoda", icon: CupSoda, label: "Refrescos" },
-      { id: "Milk", icon: Milk, label: "Batidos" },
-      { id: "Flame", icon: Flame, label: "Bebidas calientes" },
-      { id: "Snowflake", icon: Snowflake, label: "Bebidas frías" },
-    ]
-  },
-
-  {
-    group: "Postres",
-    icons: [
-      { id: "IceCream", icon: IceCream, label: "Helado" },
-      { id: "Cake", icon: Cake, label: "Tortas" },
-      { id: "Candy", icon: Candy, label: "Dulces" },
-      { id: "Cookie", icon: Cookie, label: "Galletas" },
-      { id: "Donut", icon: Donut, label: "Donas" },
-      { id: "Lollipop", icon: Lollipop, label: "Caramelos" },
-      { id: "Cherry", icon: Cherry, label: "Frutales" },
-    ]
-  },
-
-  {
-    group: "Ingredientes / Insumos",
-    icons: [
+      { id: "ShoppingBag", icon: ShoppingBag, label: "Abarrotes" },
+      { id: "Beef", icon: Beef, label: "Carnes" },
+      { id: "Fish", icon: Fish, label: "Pescados" },
+      { id: "Shrimp", icon: Shrimp, label: "Mariscos" },
       { id: "Carrot", icon: Carrot, label: "Verduras" },
       { id: "Apple", icon: Apple, label: "Frutas" },
       { id: "Milk", icon: Milk, label: "Lácteos" },
-      { id: "Wheat", icon: Wheat, label: "Harina/Cereales" },
-      { id: "Droplet", icon: Droplet, label: "Aceite/Líquidos" },
-      { id: "Snowflake", icon: Snowflake, label: "Congelados" },
-      { id: "Beef", icon: Beef, label: "Carnes" },
-      { id: "Fish", icon: Fish, label: "Mariscos/Pescados" },
+      { id: "Pizza", icon: Pizza, label: "Quesos" },
       { id: "Egg", icon: Egg, label: "Huevos" },
-      { id: "Leaf", icon: Leaf, label: "Hierbas" },
-      { id: "Leaf", icon: Leaf, label: "Condimentos" },
-      { id: "PackageOpen", icon: PackageOpen, label: "Empaquetados" },
+      { id: "Snowflake", icon: Snowflake, label: "Congelados" },
+      { id: "Container", icon: Container, label: "Enlatados" },
+      { id: "Wheat", icon: Wheat, label: "Cereales y granos" },
+      { id: "Waves", icon: Waves, label: "Pastas y fideos" },
+      { id: "Cookie", icon: Cookie, label: "Harinas y mezclas" },
+      { id: "Cylinder", icon: Cylinder, label: "Condimentos y especias" },
+      { id: "Droplet", icon: Droplet, label: "Aceites y grasas" },
+      { id: "Soup", icon: Soup, label: "Salsas y bases" },
+      { id: "Archive", icon: Archive, label: "Conservas y encurtidos" },
+      { id: "Croissant", icon: Croissant, label: "Panadería" },
+      { id: "Cake", icon: Cake, label: "Repostería y pastelería" },
     ]
   },
 
   {
-    group: "Operaciones / Inventario",
+    group: "🥤 Bebidas",
+    icons: [
+      { id: "CupSoda", icon: CupSoda, label: "Bebidas" },
+      { id: "GlassWater", icon: GlassWater, label: "Aguas y hielo" },
+      { id: "Coffee", icon: Coffee, label: "Bebidas calientes" },
+      { id: "Wine", icon: Wine, label: "Alcoholes y licores" },
+      { id: "Martini", icon: Martini, label: "Insumos de bar" },
+      { id: "Bean", icon: Bean, label: "Insumos de cafetería" },
+    ]
+  },
+
+  {
+    group: "🧼 Operación y limpieza",
+    icons: [
+      { id: "Sparkles", icon: Sparkles, label: "Limpieza y aseo" },
+      { id: "Trash2", icon: Trash2, label: "Desechables" },
+      { id: "Package", icon: Package, label: "Material de empaque" },
+      { id: "Utensils", icon: Utensils, label: "Utensilios y menaje" },
+      { id: "ChefHat", icon: ChefHat, label: "Insumos de cocina" },
+    ]
+  },
+
+  {
+    group: "🌱 Especiales",
+    icons: [
+      { id: "Sprout", icon: Sprout, label: "Productos veganos" },
+      { id: "Leaf", icon: Leaf, label: "Productos vegetarianos" },
+      { id: "CookingPot", icon: CookingPot, label: "Alimentos preparados" },
+      { id: "Candy", icon: Candy, label: "Aperitivos y snacks" },
+    ]
+  },
+
+  {
+    group: "General / UI",
     icons: [
       { id: "Warehouse", icon: Warehouse, label: "Bodega" },
-      { id: "Package", icon: Package, label: "Paquetes" },
       { id: "Box", icon: Box, label: "Cajas" },
       { id: "ClipboardList", icon: ClipboardList, label: "Control" },
-      { id: "ScanBarcode", icon: ScanBarcode, label: "Código de barras" },
-      { id: "Truck", icon: Truck, label: "Despachos" },
-      { id: "Forklift", icon: Forklift, label: "Carga" },
-      { id: "ShoppingCart", icon: ShoppingCart, label: "Pedidos" },
-      { id: "ShoppingBag", icon: ShoppingBag, label: "Compras" },
-      { id: "AlarmClock", icon: AlarmClock, label: "Vencimientos" },
-      { id: "Timer", icon: Timer, label: "Producción" },
-      { id: "Archive", icon: Archive, label: "Almacenamiento" },
-    ]
-  },
-
-  {
-    group: "Restaurante / Servicio",
-    icons: [
-      { id: "Utensils", icon: Utensils, label: "Cocina" },
-      { id: "ChefHat", icon: ChefHat, label: "Chef" },
-      { id: "Store", icon: Store, label: "Local" },
-      { id: "BellRing", icon: BellRing, label: "Atención" },
-      { id: "Users", icon: Users, label: "Clientes" },
-      { id: "Receipt", icon: Receipt, label: "Boletas" },
-      { id: "Wallet", icon: Wallet, label: "Caja" },
-      { id: "CreditCard", icon: CreditCard, label: "Pagos" },
-      { id: "BadgeDollarSign", icon: BadgeDollarSign, label: "Ventas" },
-      { id: "Table2", icon: Table2, label: "Mesas" },
-      { id: "Phone", icon: Phone, label: "Pedidos telefónicos" },
-      { id: "Bike", icon: Bike, label: "Delivery" },
-    ]
-  },
-
-  {
-    group: "General",
-    icons: [
+      { id: "Truck", icon: Truck, label: "Logística" },
+      { id: "ShoppingCart", icon: ShoppingCart, label: "Ventas" },
       { id: "Tag", icon: Tag, label: "Etiqueta" },
-      { id: "Star", icon: Star, label: "Destacado" },
-      { id: "Heart", icon: Heart, label: "Favorito" },
-      { id: "Sparkles", icon: Sparkles, label: "Premium" },
-      { id: "ShieldCheck", icon: ShieldCheck, label: "Seguro" },
-      { id: "BadgeCheck", icon: BadgeCheck, label: "Verificado" },
-      { id: "AlertCircle", icon: AlertCircle, label: "Advertencia" },
-      { id: "AlertTriangle", icon: AlertTriangle, label: "Crítico" },
-      { id: "CheckCircle2", icon: CheckCircle2, label: "Correcto" },
-      { id: "Clock", icon: Clock, label: "Pendiente" },
-      { id: "Calendar", icon: Calendar, label: "Calendario" },
-      { id: "Folder", icon: Folder, label: "Categoría" },
+      { id: "Star", icon: Star, label: "Favorito" },
+      { id: "Clock", icon: Clock, label: "Historial" },
     ]
   }
 ];
@@ -383,7 +325,19 @@ export function CategoriaSeccion({ categorias, onUpdate, selectedIds, onToggle }
             {categorias.map(cat => {
               const isSelected = selectedIds.has(cat.id);
               return (
-                <div key={cat.id} className="group relative">
+                <motion.div 
+                  key={cat.id} 
+                  layout="position"
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 350,
+                    damping: 25,
+                    mass: 1.2,
+                  }}
+                  className="group relative"
+                >
                   <Badge
                     onClick={() => onToggle(cat.id)}
                     style={{
@@ -409,7 +363,7 @@ export function CategoriaSeccion({ categorias, onUpdate, selectedIds, onToggle }
                       <Pencil className="h-3 w-3" />
                     </div>
                   </Badge>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -467,7 +421,7 @@ export function CategoriaSeccion({ categorias, onUpdate, selectedIds, onToggle }
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                 <Palette className="h-3 w-3" /> Color
               </Label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto custom-scrollbar p-1">
                 {PRESET_COLORS.map(c => (
                   <button
                     key={c}
@@ -487,7 +441,7 @@ export function CategoriaSeccion({ categorias, onUpdate, selectedIds, onToggle }
             {/* Icono */}
             <div className="space-y-1.5">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Ícono</Label>
-              <div className="border rounded-xl p-3 bg-secondary/20 max-h-[250px] overflow-y-auto space-y-4 custom-scrollbar">
+              <div className="border rounded-xl p-3 bg-secondary/20 max-h-[160px] overflow-y-auto space-y-4 custom-scrollbar">
                 {CATEGORIZED_ICONS.map(group => (
                   <div key={group.group} className="space-y-2">
                     <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground/70 border-b border-border/50 pb-1">

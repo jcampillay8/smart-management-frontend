@@ -83,38 +83,40 @@ export default function Compras() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <ShoppingCart className="h-6 w-6 text-primary" /> Gestión de Compras
-        </h1>
-        <Button onClick={() => setCompraDialog(true)} className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-          <Plus className="h-4 w-4" /> Nueva Compra
-        </Button>
-      </div>
+      <div className="bg-card backdrop-blur-md p-4 rounded-2xl border border-input shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Sub-tabs PC/Mobile */}
+          <div className="flex gap-1 rounded-xl bg-muted/50 p-1.5 border border-input shadow-inner overflow-x-auto flex-1">
+            {([
+              { key: "pendientes", icon: Clock },
+              { key: "realizadas", icon: CheckCircle2 },
+              { key: "canceladas", icon: XCircle },
+            ] as { key: SubTab; icon: any }[]).map(tab => {
+              const Icon = tab.icon;
+              const isActive = subTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setSubTab(tab.key)}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                    isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" /> 
+                  {tab.key === "pendientes" ? "Pendientes" : tab.key === "realizadas" ? "Recibidas" : "Canceladas"}
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Sub-tabs */}
-      <div className="flex gap-1 rounded-lg bg-muted p-1 overflow-x-auto">
-        {([
-          { key: "pendientes", icon: Clock },
-          { key: "realizadas", icon: CheckCircle2 },
-          { key: "canceladas", icon: XCircle },
-        ] as { key: SubTab; icon: any }[]).map(tab => {
-          const Icon = tab.icon;
-          const isActive = subTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setSubTab(tab.key)}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap",
-                isActive ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" /> 
-              {tab.key === "pendientes" ? "Pendientes" : tab.key === "realizadas" ? "Recibidas" : "Canceladas"}
-            </button>
-          );
-        })}
+          <Button 
+            onClick={() => setCompraDialog(true)} 
+            className="h-10 px-4 gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/10 transition-all active:scale-95 font-black text-[10px] uppercase tracking-widest"
+          >
+            <Plus className="h-4 w-4" /> Nueva Compra
+          </Button>
+        </div>
       </div>
 
       {/* List */}

@@ -14,6 +14,7 @@ interface Bodega {
 
 export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: string) {
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [saving, setSaving] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -27,7 +28,7 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
   const today = new Date().toISOString().split("T")[0];
 
   const loadData = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedOnce) setLoading(true);
     try {
       const [catRes, prodRes, statusRes, bodRes, pbRes] = await Promise.all([
         api.get("/inventory/categories"),
@@ -96,6 +97,7 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
       toast.error("Error al sincronizar con el inventario");
     } finally {
       setLoading(false);
+      setHasLoadedOnce(true);
     }
   }, [selectedBodegaId, today]);
 
@@ -181,6 +183,7 @@ export function useStockData(selectedBodegaId: string, activeBodegaIdForInsert: 
     productos,
     bodegas,
     entries,
+    initialEntries,
     snapshot,
     loading,
     saving,

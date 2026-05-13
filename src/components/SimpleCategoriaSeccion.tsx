@@ -1,4 +1,5 @@
 // src/components/SimpleCategoriaSeccion.tsx
+import { motion } from "framer-motion";
 import { Categoria } from "../pages/Gestion/types";
 import { cn } from "../lib/utils";
 import { Badge } from "./ui/badge";
@@ -32,7 +33,19 @@ export function SimpleCategoriaSeccion({
           {categorias.map(cat => {
             const isSelected = selectedIds.has(cat.id);
             return (
-              <div key={cat.id} className="group relative">
+              <motion.div 
+                key={cat.id} 
+                layout="position"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 350,
+                  damping: 25,
+                  mass: 1.2,
+                }}
+                className="group relative"
+              >
                 <Badge
                   onClick={() => onToggle(cat.id)}
                   style={{
@@ -51,7 +64,7 @@ export function SimpleCategoriaSeccion({
                   <CategoryIcon name={cat.icono} className="h-3.5 w-3.5 shrink-0" />
                   <span className="text-[10px] font-bold uppercase tracking-wide">{cat.nombre}</span>
                 </Badge>
-              </div>
+              </motion.div>
             );
           })}
         </div>

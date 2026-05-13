@@ -13,6 +13,8 @@ export interface Producto {
   costo_unitario: number;
   categorias_config: any[];
   categoria?: Categoria;
+  dias_alerta_vencimiento?: number;
+  precio_venta?: number;
 }
 
 export interface RecetaIngrediente {
@@ -26,6 +28,8 @@ export interface Receta {
   nombre: string;
   precio: number;
   ingredientes: RecetaIngrediente[];
+  categoria_receta_id?: string | null;
+  areas_operativas_ids?: string[] | null;
 }
 
 export interface CartItem {
@@ -34,6 +38,7 @@ export interface CartItem {
   quantity: number;
   name: string;
   unit?: string;
+  price?: number;
 }
 
 export interface Lot {

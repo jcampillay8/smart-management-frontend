@@ -15,6 +15,16 @@ export function useHistorial(selectedBodegaId: string) {
   const [fechaHasta, setFechaHasta] = useState<Date | undefined>();
   const [filtroUsuario, setFiltroUsuario] = useState<string>("");
 
+  // Soporte para búsqueda por URL (deep linking)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchVal = params.get("search");
+    if (searchVal && productos.length > 0) {
+      const found = productos.find(p => p.nombre.toLowerCase().includes(searchVal.toLowerCase()));
+      if (found) setFiltroProducto(found.id);
+    }
+  }, [productos]);
+
   const fetchHistorial = useCallback(async () => {
     setLoading(true);
     try {

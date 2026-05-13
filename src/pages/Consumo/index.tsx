@@ -3,10 +3,8 @@ import { useState } from "react";
 import api from "../../lib/api";
 import { toast } from "sonner";
 import { History, Eye, ChevronDown, Layers } from "lucide-react";
-import { useBodega } from "../../hooks/useBodega";
 import { useAreaOperativa } from "../../hooks/useAreaOperativa";
 import { useAuth } from "../../hooks/useAuth";
-import BodegaSelector from "../../components/BodegaSelector";
 import { useConsumo } from "./useConsumo";
 import { ConsumoCatalog } from "./ConsumoCatalog";
 import { ConsumoCart } from "./ConsumoCart";
@@ -16,24 +14,23 @@ import { ConsumptionRecord } from "./types";
 import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent } from "../../components/ui/dialog";
 import { cn } from "../../lib/utils";
-import { useUndoRedo } from "../../hooks/useUndoRedo";
-import { Undo2, Redo2 } from "lucide-react";
 
 import { AreaSelector } from "../../components/AreaSelector";
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Consumo() {
-  const { selectedBodegaIds, bodegas } = useBodega();
   const { selectedArea } = useAreaOperativa();
   const { isAdmin } = useAuth();
+
+  const bodegaId = selectedArea?.bodega_consumo_id || "none";
 
   const { 
     productos, categorias, categoriasRecetas, recetas, cart, loading, saving, 
     setSaving, setCart, addToCart, removeFromCart, updateQuantity,
-    getStock, groupedProducts, groupedRecetas, consumptionLog, refreshLog,
+    getStock, getAlertStatus, getRecipeAvailability, groupedProducts, groupedRecetas, consumptionLog, refreshLog,
     updateConsumo, deleteConsumo
   } = useConsumo(
-    selectedBodegaIds.join(","),
+    bodegaId,
     selectedArea?.id ?? null
   );
   
@@ -41,19 +38,6 @@ export default function Consumo() {
   const [viewMode, setViewMode] = useState<"productos" | "recetas">("recetas");
   const [editRecord, setEditRecord] = useState<ConsumptionRecord | null>(null);
   const [showLogMobile, setShowLogMobile] = useState(false);
-  const { undo, redo } = useUndoRedo();
-
-  const handleUndo = async () => {
-    if (confirm("¿Estás seguro de deshacer el último movimiento? Esto revertirá el stock de los productos involucrados.")) {
-      await undo();
-      refreshLog();
-    }
-  };
-
-  const handleRedo = async () => {
-    await redo();
-    refreshLog();
-  };
 
   const filteredProds = productos.filter(p => 
     p.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -62,14 +46,11 @@ export default function Consumo() {
   const handleConsumoSubmit = async () => {
     if (cart.length === 0) return;
 
-    // For non-admins, must have an area with a bodega_consumo set
     const areaId = selectedArea?.id;
-    const isAll = selectedBodegaIds.includes("all");
-    const bodegaConsumoId = selectedArea?.bodega_consumo_id
-      ?? (!isAll ? selectedBodegaIds[0] : bodegas[0]?.id);
+    const bodegaConsumoId = selectedArea?.bodega_consumo_id;
 
     if (!bodegaConsumoId) {
-      toast.error("No hay bodega de consumo configurada");
+      toast.error("El área seleccionada no tiene una bodega de consumo configurada");
       return;
     }
 
@@ -112,7 +93,7 @@ export default function Consumo() {
 
       toast.success("Consumo registrado");
       setCart([]);
-      refreshLog();
+      await refreshLog();
     } catch (e: any) {
       toast.error(e.response?.data?.detail || e.message || "Error al registrar consumo");
     } finally {
@@ -142,49 +123,54 @@ export default function Consumo() {
               Preparaciones y uso de insumos
             </p>
           </div>
-          {/* BOTÓN HISTORIAL PC/TABLET (Alineado a la derecha) */}
+        </div>
+      </header>
+
+      {/* Selectores y Toggle Row */}
+      <div className="bg-card backdrop-blur-md p-4 rounded-2xl border border-input shadow-xl relative z-[50]">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+            <div className="flex w-full md:w-auto items-center gap-1.5 bg-muted/50 p-1.5 rounded-xl border border-input shadow-inner min-w-0">
+              <div className="flex-1 min-w-0">
+                <AreaSelector buttonClassName="w-full min-w-0 truncate" />
+              </div>
+            </div>
+            
+            <div className="hidden md:flex items-center rounded-xl bg-muted/50 p-1 border border-input shadow-inner">
+              <button
+                onClick={() => setViewMode("recetas")}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                  viewMode === "recetas" ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20" : "text-muted-foreground hover:text-purple-500"
+                )}
+              >
+                Recetas
+              </button>
+              <button
+                onClick={() => setViewMode("productos")}
+                className={cn(
+                  "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                  viewMode === "productos" ? "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20" : "text-muted-foreground hover:text-yellow-500"
+                )}
+              >
+                Productos
+              </button>
+            </div>
+          </div>
+
           <Button 
             variant="outline" 
-            className="hidden md:flex gap-2 h-10 px-4 rounded-xl border-border/50 hover:bg-secondary transition-all font-bold text-xs shadow-sm" 
+            className="hidden md:flex gap-2 h-10 px-4 rounded-xl border-input hover:bg-secondary transition-all font-black text-[10px] uppercase tracking-widest shadow-sm" 
             onClick={() => setShowLogMobile(true)}
           >
             <History className="h-4 w-4" /> Ver Historial
           </Button>
         </div>
-      </header>
-
-      {/* Selectores y Toggle Row */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-3 flex-wrap">
-          <AreaSelector />
-          <BodegaSelector />
-          
-          {/* Toggle PC/Tablet: A continuación del selector de bodegas */}
-          <div className="hidden md:flex items-center rounded-xl bg-secondary/30 p-1 border border-border/50">
-            <button
-              onClick={() => setViewMode("recetas")}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                viewMode === "recetas" ? "bg-purple-500 text-white shadow-lg shadow-purple-500/20" : "text-muted-foreground hover:text-purple-500"
-              )}
-            >
-              Recetas
-            </button>
-            <button
-              onClick={() => setViewMode("productos")}
-              className={cn(
-                "px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                viewMode === "productos" ? "bg-yellow-500 text-white shadow-lg shadow-yellow-500/20" : "text-muted-foreground hover:text-yellow-500"
-              )}
-            >
-              Productos
-            </button>
-          </div>
-        </div>
+      </div>
 
         {/* LAYOUT MÓVIL: Toggle y Historial debajo de los selectores */}
-        <div className="flex md:hidden items-center justify-between w-full gap-3">
-          <div className="flex items-center rounded-xl bg-secondary/30 p-1 border border-border/50 flex-1">
+        <div className="flex md:hidden items-center justify-between w-full gap-3 mt-4">
+          <div className="flex items-center rounded-xl bg-muted/50 p-1 border border-input shadow-inner flex-1">
             <button
               onClick={() => setViewMode("recetas")}
               className={cn(
@@ -206,16 +192,15 @@ export default function Consumo() {
           </div>
           <Button 
             variant="outline" 
-            className="gap-2 h-11 px-4 rounded-xl border-border/50 font-bold text-xs" 
+            className="gap-2 h-11 px-4 rounded-xl border-input font-black text-[10px] uppercase tracking-widest" 
             onClick={() => setShowLogMobile(true)}
           >
             <History className="h-4 w-4" /> Historial
           </Button>
         </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-3 order-1">
+        <div className="lg:col-span-3">
           <ConsumoCatalog 
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
@@ -225,13 +210,17 @@ export default function Consumo() {
             groupedItems={viewMode === "productos" ? groupedProducts : groupedRecetas}
             onAdd={addToCart}
             getStock={getStock}
+            getAlertStatus={getAlertStatus}
+            getRecipeAvailability={getRecipeAvailability}
             viewMode={viewMode}
           />
         </div>
         
-        <div className="lg:col-span-1 order-2">
+        <div className="lg:col-span-1">
           <ConsumoCart 
             cart={cart}
+            allRecetas={recetas}
+            productos={productos}
             saving={saving}
             onUpdateQty={updateQuantity}
             onRemove={removeFromCart}

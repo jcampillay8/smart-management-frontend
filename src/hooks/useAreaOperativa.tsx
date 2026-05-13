@@ -41,8 +41,10 @@ export function AreaOperativaProvider({ children }: { children: ReactNode }) {
     handleAreaChange(area);
   };
 
-  const loadAreas = async () => {
+  const loadAreas = async (retryCount = 0) => {
+    if (!user) return;
     try {
+      setLoading(true);
       const res = await api.get("/settings/areas");
       const list: AreaOperativa[] = res.data ?? [];
       setAreas(list);
@@ -57,14 +59,23 @@ export function AreaOperativaProvider({ children }: { children: ReactNode }) {
       }
     } catch (e) {
       console.error("Error loading areas operativas:", e);
+      // Retry up to 3 times if it fails
+      if (retryCount < 3) {
+        setTimeout(() => loadAreas(retryCount + 1), 2000 * (retryCount + 1));
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) loadAreas();
-  }, [user]);
+    if (user) {
+      loadAreas();
+    } else {
+      setAreas([]);
+      setLoading(false);
+    }
+  }, [user?.id]); // Use user.id to be more specific
 
   const selectedArea = areas.find((a) => a.id === selectedAreaId) ?? null;
 
