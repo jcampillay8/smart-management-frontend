@@ -1,13 +1,13 @@
 // src/pages/Gestion/CategoriaRecetaSeccion.tsx
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
+import {
   Plus, Trash2, Pencil, X, Tag, Check,
-  Utensils, ChefHat, Coffee, Flame, Warehouse, Package, 
-  Box, Archive, Sparkles, Bed, Lamp, Brush, ConciergeBell, ShoppingBag, Store, 
-  Beef, Fish, Carrot, Apple, Milk, Egg, Snowflake, Wheat, Soup, Leaf, Droplet, 
-  Croissant, Cake, CupSoda, GlassWater, Wine, Martini, Sprout, CookingPot, 
-  Candy, Pizza, Sandwich, Salad, IceCream, Cookie, Donut, Heart, Zap, 
+  Utensils, ChefHat, Coffee, Flame, Warehouse, Package,
+  Box, Archive, Sparkles, Bed, Lamp, Brush, ConciergeBell, ShoppingBag, Store,
+  Beef, Fish, Carrot, Apple, Milk, Egg, Snowflake, Wheat, Soup, Leaf, Droplet,
+  Croissant, Cake, CupSoda, GlassWater, Wine, Martini, Sprout, CookingPot,
+  Candy, Pizza, Sandwich, Salad, IceCream, Cookie, Donut, Heart, Zap,
   Drumstick, Timer, Citrus, Star, Beer, CheckCircle2, Palette,
   Shrimp, Waves, Bean
 } from "lucide-react";
@@ -21,11 +21,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "../../components/ui/label";
 
 const ICON_MAP: Record<string, any> = {
-  Utensils, ChefHat, Coffee, Flame, Warehouse, Package, 
+  Utensils, ChefHat, Coffee, Flame, Warehouse, Package,
   Box, Archive, Sparkles, Bed, Lamp, Brush, ConciergeBell, Tag, ShoppingBag, Store,
-  Beef, Fish, Carrot, Apple, Milk, Egg, 
-  Snowflake, Wheat, Soup, Leaf, Droplet, Croissant, Cake, CupSoda, GlassWater, 
-  Wine, Martini, Sprout, CookingPot, Candy, Pizza, Sandwich, Salad, IceCream, 
+  Beef, Fish, Carrot, Apple, Milk, Egg,
+  Snowflake, Wheat, Soup, Leaf, Droplet, Croissant, Cake, CupSoda, GlassWater,
+  Wine, Martini, Sprout, CookingPot, Candy, Pizza, Sandwich, Salad, IceCream,
   Cookie, Donut, Heart, Zap, Drumstick, Timer, Citrus, Star, Beer, CheckCircle2,
   Shrimp, Waves, Bean
 };
@@ -122,13 +122,13 @@ const PRESET_COLORS = [
   "#64748B", "#475569", "#334155", "#1E293B"
 ];
 
-export function CategoriaRecetaSeccion({ 
-  categorias, 
+export function CategoriaRecetaSeccion({
+  categorias,
   onUpdate,
   selectedIds = new Set(),
   onToggle
-}: { 
-  categorias: any[], 
+}: {
+  categorias: any[],
   onUpdate: () => void,
   selectedIds?: Set<string>,
   onToggle?: (id: string) => void
@@ -216,8 +216,8 @@ export function CategoriaRecetaSeccion({
         <div className="flex justify-center md:flex-wrap items-center gap-2 py-3 px-4 min-w-max md:min-w-0 mx-auto">
           <div className="grid grid-flow-col grid-rows-2 gap-2 md:contents">
             {categorias.map(cat => (
-              <motion.div 
-                key={cat.id} 
+              <motion.div
+                key={cat.id}
                 layout="position"
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -232,9 +232,9 @@ export function CategoriaRecetaSeccion({
                 <Badge
                   variant="secondary"
                   onClick={() => onToggle?.(cat.id)}
-                  style={{ 
+                  style={{
                     backgroundColor: selectedIds.has(cat.id)
-                      ? cat.color 
+                      ? cat.color
                       : (cat.color ? `${cat.color}15` : undefined),
                     color: selectedIds.has(cat.id)
                       ? "white"
@@ -248,12 +248,12 @@ export function CategoriaRecetaSeccion({
                 >
                   <CategoryIcon name={cat.icono} className="h-3.5 w-3.5" />
                   <span className="text-[10px] font-bold uppercase tracking-wide">{cat.nombre}</span>
-                  <div 
-                    className="hidden group-hover:flex items-center ml-1 border-l pl-1.5 gap-1" 
+                  <div
+                    className="hidden group-hover:flex items-center ml-1 border-l pl-1.5 gap-1"
                     style={{ borderColor: selectedIds.has(cat.id) ? "rgba(255,255,255,0.3)" : (cat.color ? `${cat.color}40` : undefined) }}
                   >
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); startEdit(cat); }} 
+                    <button
+                      onClick={(e) => { e.stopPropagation(); startEdit(cat); }}
                       className={cn("transition-colors", selectedIds.has(cat.id) ? "hover:text-white/80" : "hover:text-foreground")}
                     >
                       <Pencil className="h-3 w-3" />
@@ -299,8 +299,8 @@ export function CategoriaRecetaSeccion({
 
             <div className="space-y-1.5">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nombre</Label>
-              <Input 
-                placeholder="Ej: Tragos, Platos Fondo..." 
+              <Input
+                placeholder="Ej: Tragos, Platos Fondo..."
                 value={form.nombre}
                 onChange={e => setForm({ ...form, nombre: e.target.value })}
                 onKeyDown={e => e.key === "Enter" && handleSave()}

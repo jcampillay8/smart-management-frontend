@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, User, LogOut, Moon, Sun, Settings, Menu, AlertTriangle, Info, OctagonAlert, ChevronRight, Store, Users, Palette, Bell as BellIcon, Warehouse, ShieldCheck, Undo2, Redo2, Package, Mail, HelpCircle, LayoutPanelTop } from "lucide-react";
+import { Bell, Search, User, LogOut, Moon, Sun, Settings, Menu, AlertTriangle, Info, OctagonAlert, ChevronRight, Store, Users, Palette, Bell as BellIcon, Warehouse, ShieldCheck, Undo2, Redo2, Package, Mail, HelpCircle } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { useGlobalNotifications } from "../hooks/useNotifications";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useUndoRedo } from "../hooks/useUndoRedo";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "../lib/utils";
 
 export default function Navbar({ 
@@ -46,7 +46,6 @@ export default function Navbar({
     ...(isAdmin ? [
       { id: "restaurante", label: "Restaurante", icon: Store, action: () => navigate("/configuracion?tab=restaurante") },
       { id: "bodegas", label: "Bodegas", icon: Warehouse, action: () => navigate("/configuracion?tab=bodegas") },
-      { id: "areas", label: "Áreas Operativas", icon: LayoutPanelTop, action: () => navigate("/configuracion?tab=areas") },
       { id: "usuarios", label: "Usuarios y Roles", icon: Users, action: () => navigate("/configuracion?tab=usuarios") },
       { id: "plantillas_email", label: "Plantillas de Email", icon: Mail, action: () => navigate("/configuracion?tab=plantillas_email") },
     ] : []),
@@ -55,7 +54,7 @@ export default function Navbar({
   ];
 
   return (
-    <header className="h-20 glass border-b border-border sticky top-0 z-[100] px-4 md:px-8 flex items-center justify-between gap-4">
+    <header className="h-20 glass border-b border-border sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between gap-4">
       {/* IZQUIERDA: Menú (Móvil) */}
       <div className="flex items-center gap-3 md:hidden">
         <button 
@@ -79,7 +78,7 @@ export default function Navbar({
       </div>
 
       {/* DERECHA: Perfil de Usuario y Acciones */}
-      <div className="flex items-center gap-4" ref={dropdownRef}>
+      <div className="flex items-center gap-4">
         {isConsumo && (
           <div className="flex items-center gap-1 shrink-0 bg-secondary/30 p-1 rounded-xl border border-border/50">
             <button 
@@ -99,26 +98,49 @@ export default function Navbar({
           </div>
         )}
 
-        {/* Perfil de Usuario (Ahora a la derecha) */}
-        <div className="flex items-center gap-3 shrink-0 px-3 py-1.5 rounded-2xl hover:bg-secondary/50 transition-all cursor-default border border-transparent hover:border-border/50">
-          <div className="flex flex-col items-end min-w-0 hidden sm:flex">
-            <span className="font-bold text-xs tracking-tight truncate max-w-[120px]">
-              {user?.firstName ? `${user.firstName} ${user.lastName || ""}` : user?.username}
-            </span>
-            <span className="text-[9px] text-muted-foreground font-medium capitalize">
-              {user?.role || "Personal"}
-            </span>
-          </div>
-          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-inner">
-            {user?.userImage ? (
-              <img src={user.userImage} alt="Profile" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-primary font-bold text-xs uppercase">
-                {user?.firstName ? `${user.firstName[0]}${user.lastName?.[0] || ""}` : user?.username?.slice(0, 2).toUpperCase()}
-              </span>
-            )}
-          </div>
-        </div>
+         {/* Perfil de Usuario (Ahora a la derecha) */}
+         <div className="relative">
+           <div 
+             className="flex items-center gap-3 shrink-0 px-3 py-1.5 rounded-2xl hover:bg-secondary/50 transition-all cursor-pointer border border-transparent hover:border-border/50"
+             onClick={() => toggleDropdown("profile")}
+           >
+             <div className="flex flex-col items-end min-w-0 hidden sm:flex">
+               <span className="font-bold text-xs tracking-tight truncate max-w-[120px]">
+                 {user?.firstName ? `${user.firstName} ${user.lastName || ""}` : user?.username}
+               </span>
+               <span className="text-[9px] text-muted-foreground font-medium capitalize">
+                 {user?.role || "Personal"}
+               </span>
+             </div>
+             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-inner">
+               {user?.userImage ? (
+                 <img src={user.userImage} alt="Profile" className="h-full w-full object-cover" />
+               ) : (
+                 <span className="text-primary font-bold text-xs uppercase">
+                   {user?.firstName ? `${user.firstName[0]}${user.lastName?.[0] || ""}` : user?.username?.slice(0, 2).toUpperCase()}
+                 </span>
+               )}
+             </div>
+           </div>
+           {openDropdown === "profile" && (
+             <div className="absolute right-0 mt-2 w-48 bg-card rounded-2xl p-2 shadow-2xl border border-border z-50">
+               <button
+                 onClick={() => { navigate("/perfil"); setOpenDropdown(null); }}
+                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm text-left"
+               >
+                 <User size={16} className="text-muted-foreground" />
+                 Ver Perfil
+               </button>
+               <button
+                 onClick={() => { signOut(); setOpenDropdown(null); }}
+                 className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm text-left text-destructive"
+               >
+                 <LogOut size={16} className="text-destructive" />
+                 Cerrar Sesión
+               </button>
+             </div>
+           )}
+         </div>
 
         <div className="w-[1px] h-8 bg-border mx-1 hidden sm:block" />
 
@@ -136,55 +158,47 @@ export default function Navbar({
               )}
             </button>
             
-            <AnimatePresence>
-              {openDropdown === "notif" && (
-                <motion.div 
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="absolute right-0 mt-2 w-80 bg-card rounded-2xl p-2 shadow-2xl border border-border z-[110]"
+            {openDropdown === "notif" && (
+              <div className="absolute right-0 mt-2 w-80 bg-card rounded-2xl p-2 shadow-2xl border border-border z-50">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-border mb-2">
+                  <span className="text-sm font-bold">Notificaciones</span>
+                  {totalCount > 0 && (
+                    <span className="text-xs bg-secondary px-2 py-0.5 rounded-full">{totalCount} nuevas</span>
+                  )}
+                </div>
+                <div className="max-h-80 overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="py-8 text-center text-sm text-muted-foreground">
+                      Sin notificaciones nuevas
+                    </div>
+                  ) : (
+                    notifications.slice(0, 5).map((n) => {
+                      const Icon = n.type === "critical" ? OctagonAlert : n.type === "warning" ? AlertTriangle : Info;
+                      return (
+                        <button 
+                          key={n.key}
+                          onClick={() => { navigate("/analiticas"); setOpenDropdown(null); }}
+                          className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
+                        >
+                          <Icon className={cn("h-4 w-4 mt-0.5", n.type === "critical" ? "text-destructive" : "text-amber-500")} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{n.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">{n.details.length} ítems</p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <button 
+                  onClick={() => { navigate("/analiticas"); setOpenDropdown(null); }}
+                  className="w-full text-center text-xs text-primary font-medium py-2 border-t border-border mt-2 hover:bg-secondary rounded-lg"
                 >
-                  <div className="flex items-center justify-between px-3 py-2 border-b border-border mb-2">
-                    <span className="text-sm font-bold">Notificaciones</span>
-                    {totalCount > 0 && (
-                      <span className="text-xs bg-secondary px-2 py-0.5 rounded-full">{totalCount} nuevas</span>
-                    )}
-                  </div>
-                  <div className="max-h-80 overflow-y-auto">
-                    {notifications.length === 0 ? (
-                      <div className="py-8 text-center text-sm text-muted-foreground">
-                        Sin notificaciones nuevas
-                      </div>
-                    ) : (
-                      notifications.slice(0, 5).map((n) => {
-                        const Icon = n.type === "critical" ? OctagonAlert : n.type === "warning" ? AlertTriangle : Info;
-                        return (
-                          <button 
-                            key={n.key}
-                            onClick={() => { navigate("/analiticas"); setOpenDropdown(null); }}
-                            className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-secondary transition-colors text-left"
-                          >
-                            <Icon className={cn("h-4 w-4 mt-0.5", n.type === "critical" ? "text-destructive" : "text-amber-500")} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{n.title}</p>
-                              <p className="text-xs text-muted-foreground truncate">{n.details.length} ítems</p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                  <button 
-                    onClick={() => { navigate("/analiticas"); setOpenDropdown(null); }}
-                    className="w-full text-center text-xs text-primary font-medium py-2 border-t border-border mt-2 hover:bg-secondary rounded-lg"
-                  >
-                    Ver todas las notificaciones
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  Ver todas las notificaciones
+                </button>
+              </div>
+            )}
           </div>
           <button 
             onClick={toggleTheme}
@@ -204,33 +218,25 @@ export default function Navbar({
               >
                 <Settings size={20} className="text-muted-foreground" />
               </button>
-              <AnimatePresence>
-                {openDropdown === "config" && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="absolute right-0 mt-2 w-56 bg-card rounded-2xl p-2 shadow-2xl border border-border z-[110]"
-                  >
-                    <div className="px-3 py-2 border-b border-border mb-2">
-                      <span className="text-sm font-bold">Configuración</span>
-                    </div>
-                    <div className="space-y-1">
-                      {configSections.map((section) => (
-                        <button
-                          key={section.id}
-                          onClick={() => { section.action(); setOpenDropdown(null); }}
-                          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm text-left"
-                        >
-                          <section.icon size={16} className="text-muted-foreground" />
-                          {section.label}
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {openDropdown === "config" && (
+                <div className="absolute right-0 mt-2 w-56 bg-card rounded-2xl p-2 shadow-2xl border border-border z-50">
+                  <div className="px-3 py-2 border-b border-border mb-2">
+                    <span className="text-sm font-bold">Configuración</span>
+                  </div>
+                  <div className="space-y-1">
+                    {configSections.map((section) => (
+                      <button
+                        key={section.id}
+                        onClick={() => { section.action(); setOpenDropdown(null); }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary transition-colors text-sm text-left"
+                      >
+                        <section.icon size={16} className="text-muted-foreground" />
+                        {section.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

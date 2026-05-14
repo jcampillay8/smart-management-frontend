@@ -23,7 +23,13 @@ import Configuracion from "./pages/Configuracion/index";
 import Compras from "./pages/Compras/index";
 import ContarInventario from "./pages/ContarInventario/index";
 import Proveedores from "./pages/Proveedores/index";
-import ProfilePage from "./pages/Profile/index";
+import Facturas from "./pages/facturas/index";
+import InvoiceDetail from "./pages/facturas/InvoiceDetail";
+import ExecutiveOverview from "./pages/Reportes/ExecutiveOverview/index";
+import LossControl from "./pages/Reportes/LossControl/index";
+import OperationalEfficiency from "./pages/Reportes/OperationalEfficiency/index";
+import FinancialVision from "./pages/Reportes/FinancialVision/index";
+import PanelEjecutivo from "./pages/Reportes/ResumenGeneral/index";
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, loading } = useAuth();
@@ -44,9 +50,9 @@ function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <UndoRedoProvider>
-          <BodegaProvider>
-            <AreaOperativaProvider>
+        <AreaOperativaProvider>
+          <UndoRedoProvider>
+            <BodegaProvider>
               <TooltipProvider>
                 <Router>
                   <Routes>
@@ -54,11 +60,10 @@ function App() {
                     <Route element={<PrivateRoute><AppLayout /></PrivateRoute>}>
                       <Route path="/" element={<StockRegistro />} />
                       <Route path="/consumo" element={<Consumo />} />
-                      <Route path="/alertas" element={<Analiticas />} />
-                      <Route path="/actividades" element={<Actividades />} />
+                      <Route path="/analiticas" element={<Analiticas />} />
                       <Route path="/gestion" element={<Gestion />} />
                       <Route path="/gestionar-merma" element={<GestionarMerma />} />
-                      <Route path="/informes" element={<Informes />} />
+                      <Route path="/reportes/resumen-general" element={<Informes />} />
                       <Route path="/proyeccion" element={<Proyeccion />} />
                       <Route path="/historial" element={<Historial />} />
                       <Route path="/eventos" element={<Eventos />} />
@@ -66,16 +71,22 @@ function App() {
                       <Route path="/compras" element={<Compras />} />
                       <Route path="/proveedores" element={<Proveedores />} />
                       <Route path="/contar-inventario" element={<ContarInventario />} />
-                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/facturas" element={<Facturas />} />
+                      <Route path="/facturas/:id" element={<InvoiceDetail />} />
+                      <Route path="/reportes/panel-ejecutivo" element={<PanelEjecutivo />} />
+                      <Route path="/reportes/resumen-ejecutivo" element={<ExecutiveOverview />} />
+                      <Route path="/reportes/control-perdidas" element={<LossControl />} />
+                      <Route path="/reportes/eficiencia-operacional" element={<OperationalEfficiency />} />
+                      <Route path="/reportes/vision-financiera" element={<FinancialVision />} />
                     </Route>
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Router>
                 <Toaster position="top-right" richColors />
               </TooltipProvider>
-            </AreaOperativaProvider>
-          </BodegaProvider>
-        </UndoRedoProvider>
+            </BodegaProvider>
+          </UndoRedoProvider>
+        </AreaOperativaProvider>
       </AuthProvider>
     </ThemeProvider>
   );

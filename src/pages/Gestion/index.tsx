@@ -284,15 +284,15 @@ export default function GestionPage() {
     const sortedFiltered = [...filtered].sort((a, b) => {
       const { key, direction } = productSortConfig;
       const multiplier = direction === "asc" ? 1 : -1;
-      
+
       if (key === "nombre") return a.nombre.localeCompare(b.nombre) * multiplier;
-      
+
       if (key === "stock") {
         const stockA = a.bodegas_config?.reduce((sum, bc) => sum + ((isAll || selectedBodegaIds.includes(bc.bodega_id)) ? (bc.stock_actual || 0) : 0), 0) || 0;
         const stockB = b.bodegas_config?.reduce((sum, bc) => sum + ((isAll || selectedBodegaIds.includes(bc.bodega_id)) ? (bc.stock_actual || 0) : 0), 0) || 0;
         return (stockA - stockB) * multiplier;
       }
-      
+
       if (key === "precio") {
         return ((a.precio_venta || 0) - (b.precio_venta || 0)) * multiplier;
       }
@@ -303,7 +303,7 @@ export default function GestionPage() {
         const dateB = b.proxima_expiracion ? new Date(b.proxima_expiracion + "T00:00:00").getTime() : Infinity;
         return (dateA - dateB) * multiplier;
       }
-      
+
       return 0;
     });
 
@@ -324,17 +324,17 @@ export default function GestionPage() {
 
   const filteredRecetas = useMemo(() => {
     let result = recetas;
-    
+
     // Area filter
     if (selectedArea) {
       result = result.filter(r => r.areas_operativas_ids?.includes(selectedArea.id));
     }
-    
+
     // Category filter
     if (selectedRecetaCategoryIds.size > 0) {
       result = result.filter(r => selectedRecetaCategoryIds.has(r.categoria_receta_id));
     }
-    
+
     // Text search
     if (recetaSearch) {
       const q = recetaSearch.toLowerCase();
@@ -345,13 +345,13 @@ export default function GestionPage() {
     const sorted = [...result].sort((a, b) => {
       const { key, direction } = recetaSortConfig;
       if (key === "nombre") {
-        return direction === "asc" 
-          ? a.nombre.localeCompare(b.nombre) 
+        return direction === "asc"
+          ? a.nombre.localeCompare(b.nombre)
           : b.nombre.localeCompare(a.nombre);
       }
       if (key === "precio") {
-        return direction === "asc" 
-          ? (a.precio || 0) - (b.precio || 0) 
+        return direction === "asc"
+          ? (a.precio || 0) - (b.precio || 0)
           : (b.precio || 0) - (a.precio || 0);
       }
       if (key === "stock") {
@@ -679,9 +679,9 @@ export default function GestionPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button 
+                <Button
                   variant={showCategories ? "default" : "outline"}
-                  size="sm" 
+                  size="sm"
                   className="h-10 w-full rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest border-input"
                   onClick={() => {
                     if (showCategories) setSelectedCategoryIds(new Set());
@@ -765,7 +765,7 @@ export default function GestionPage() {
                 <div key={cat.id} className="space-y-1">
                   {/* Category header with icon + color */}
                   <div className="flex items-center gap-4 px-1 py-2">
-                    <div 
+                    <div
                       className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20"
                       style={{ color: cat.color || "var(--primary)", borderColor: cat.color ? `${cat.color}40` : undefined }}
                     >
@@ -909,7 +909,7 @@ export default function GestionPage() {
                                     today.setHours(0, 0, 0, 0);
                                     const target = new Date(dateStr + "T00:00:00");
                                     const diffDays = Math.ceil((target.getTime() - today.getTime()) / (1000 * 3600 * 24));
-                                    
+
                                     if (diffDays < 0) return "Vencido";
                                     if (diffDays === 0) return "Vence hoy";
                                     if (diffDays === 1) return "Vence mañana";
@@ -1068,7 +1068,7 @@ export default function GestionPage() {
               <div className="bg-muted/50 p-1.5 rounded-xl border border-input shadow-inner w-full">
                 <AreaSelector buttonClassName="min-w-0 w-full rounded-lg" />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -1117,9 +1117,9 @@ export default function GestionPage() {
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button 
+                <Button
                   variant={showRecetaCategories ? "default" : "outline"}
-                  size="sm" 
+                  size="sm"
                   className="h-10 w-full rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest border-input"
                   onClick={() => {
                     if (showRecetaCategories) setSelectedRecetaCategoryIds(new Set());
@@ -1158,8 +1158,8 @@ export default function GestionPage() {
 
               {/* Categories visible on mobile only if active */}
               {showRecetaCategories && (
-                <CategoriaRecetaSeccion 
-                  categorias={categoriasRecetas} 
+                <CategoriaRecetaSeccion
+                  categorias={categoriasRecetas}
                   onUpdate={refresh}
                   selectedIds={selectedRecetaCategoryIds}
                   onToggle={toggleRecetaCategory}
@@ -1182,9 +1182,9 @@ export default function GestionPage() {
             {/* PC CATEGORY FILTER */}
             <div className="hidden md:block">
               {showRecetaCategories && (
-                <CategoriaRecetaSeccion 
-                  categorias={categoriasRecetas} 
-                  onUpdate={refresh} 
+                <CategoriaRecetaSeccion
+                  categorias={categoriasRecetas}
+                  onUpdate={refresh}
                   selectedIds={selectedRecetaCategoryIds}
                   onToggle={toggleRecetaCategory}
                 />
@@ -1198,7 +1198,7 @@ export default function GestionPage() {
               filteredRecetas.map(cat => (
                 <div key={cat.id} className="space-y-1">
                   <div className="flex items-center gap-4 px-1 py-2">
-                    <div 
+                    <div
                       className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.4em] bg-primary/10 px-4 py-1.5 rounded-full border border-primary/20"
                       style={{ color: cat.color || "var(--primary)", borderColor: cat.color ? `${cat.color}40` : undefined }}
                     >
