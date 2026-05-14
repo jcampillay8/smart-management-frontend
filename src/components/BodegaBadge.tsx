@@ -26,11 +26,16 @@ export default function BodegaBadge({ nombre, color, icono, className }: BodegaB
   return (
     <span 
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-bold whitespace-nowrap border shadow-sm transition-all", 
+        "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-black whitespace-nowrap border shadow-md transition-all uppercase tracking-wider", 
         !color && defaultColorClass, 
         className
       )}
-      style={color ? { backgroundColor: `${color}15`, color: color, borderColor: `${color}30` } : {}}
+      style={color ? { 
+        backgroundColor: `${color}25`, 
+        color: color, 
+        borderColor: `${color}40`,
+        boxShadow: `0 0 12px ${color}15`
+      } : {}}
     >
       {IconComponent && <IconComponent size={12} strokeWidth={2.5} />}
       {label}

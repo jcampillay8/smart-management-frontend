@@ -75,18 +75,23 @@ export const buildInventorySnapshot = (records: InventoryMovementRecord[], upTo?
 
   Object.entries(recordsByProduct).forEach(([productId, productRecords]) => {
     const conteos = productRecords.filter((record) => record.tipo_movimiento === "conteo");
-    if (conteos.length === 0) return;
-
-    const latestConteoTimestamp = Math.max(...conteos.map((record) => toTimestamp(record.created_at)));
-    const currentBatch = conteos.filter(
-      (record) => Math.abs(toTimestamp(record.created_at) - latestConteoTimestamp) <= CURRENT_BATCH_WINDOW_MS,
-    );
+    
+    // If no conteo exists, we use 0 as base and include ALL records
+    const latestConteoTimestamp = conteos.length > 0 
+      ? Math.max(...conteos.map((record) => toTimestamp(record.created_at)))
+      : 0;
 
     const lotMap = new Map<string, number>();
-    currentBatch.forEach((record) => {
-      const expiryKey = record.fecha_vencimiento ?? "";
-      lotMap.set(expiryKey, (lotMap.get(expiryKey) ?? 0) + toQuantity(record.cantidad));
-    });
+
+    if (conteos.length > 0) {
+      const currentBatch = conteos.filter(
+        (record) => Math.abs(toTimestamp(record.created_at) - latestConteoTimestamp) <= CURRENT_BATCH_WINDOW_MS,
+      );
+      currentBatch.forEach((record) => {
+        const expiryKey = record.fecha_vencimiento ?? "";
+        lotMap.set(expiryKey, (lotMap.get(expiryKey) ?? 0) + toQuantity(record.cantidad));
+      });
+    }
 
     const upToTimestamp = upTo ? toTimestamp(upTo) : Infinity;
     const deductions = productRecords
@@ -102,7 +107,7 @@ export const buildInventorySnapshot = (records: InventoryMovementRecord[], upTo?
     const additions = productRecords
       .filter(
         (record) =>
-          (record.tipo_movimiento === "entrada" ||
+          (record.tipo_movimiento === "entrada" || record.tipo_movimiento === "ajuste_positivo" ||
            (record.tipo_movimiento === "transferencia" && record.descripcion_merma !== "salida")) &&
           toTimestamp(record.created_at) > latestConteoTimestamp &&
           toTimestamp(record.created_at) <= upToTimestamp,

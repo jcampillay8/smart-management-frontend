@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
 import api from "../lib/api";
 
 const API_URL = api.defaults.baseURL;
@@ -37,6 +38,7 @@ export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: Si
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   // Notif badge from localStorage
   const [hasCritical, setHasCritical] = useState(false);
@@ -81,7 +83,7 @@ export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: Si
           initial={false}
           animate={{ 
             right: isCollapsed && !isOpen ? 20 : 12,
-            backgroundColor: isCollapsed && !isOpen ? "rgba(var(--primary-rgb), 0.1)" : "rgba(var(--secondary-rgb), 0.5)",
+            backgroundColor: isCollapsed && !isOpen ? "hsl(var(--primary) / 0.1)" : "hsl(var(--secondary) / 0.5)",
             width: isCollapsed && !isOpen ? 40 : 32,
             height: isCollapsed && !isOpen ? 40 : 32,
             borderRadius: isCollapsed && !isOpen ? "0.75rem" : "0.5rem",
@@ -96,17 +98,17 @@ export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: Si
 
         <div className="flex items-center gap-4 min-w-0 flex-1">
           <div className={cn(
-            "h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm relative transition-opacity duration-300",
+            "h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-inner relative transition-opacity duration-300",
             isCollapsed && !isOpen && "group-hover:opacity-0"
           )}>
             {logo ? (
               <img 
                 src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
-                className="h-full w-full object-contain p-1" 
+                className="h-full w-full object-contain" 
                 alt="Logo" 
               />
             ) : (
-              <Package className="h-5 w-5 text-primary" />
+              <Package className="h-6 w-6 text-primary" />
             )}
           </div>
           
@@ -120,24 +122,43 @@ export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: Si
               >
                 {(() => {
                   const n = name || "SIOCI";
-                  
+                  const isLight = theme === "light";
+                  const isCosmic = theme === "cosmic-blue";
+                  const hoverShadow = isLight 
+                    ? "2px 2px 12px rgba(0,0,0,0.12), 0 0 18px rgba(0,0,0,0.04)"
+                    : isCosmic
+                      ? "0 0 15px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.25), 0 0 50px rgba(255,255,255,0.1)"
+                      : "0 0 15px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.25), 0 0 50px hsl(var(--primary) / 0.1)";
+
                   if (tipoNegocio) {
                     return (
-                      <div className="flex flex-col -space-y-0.5">
-                        <span className="text-[9px] font-semibold text-primary uppercase tracking-[0.15em] leading-none">
+                      <motion.div 
+                        whileHover={{ 
+                          textShadow: hoverShadow,
+                        }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="flex flex-col -space-y-0.5 cursor-default group/name"
+                      >
+                        <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.15em] leading-none">
                           {tipoNegocio}
                         </span>
-                        <span className="font-bold text-sm tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                        <span className="font-bold text-base tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis">
                           {n}
                         </span>
-                      </div>
+                      </motion.div>
                     );
                   }
                   
                   return (
-                    <span className="font-bold text-sm leading-tight tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                    <motion.span 
+                      whileHover={{ 
+                        textShadow: hoverShadow,
+                      }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="font-bold text-base leading-tight tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis cursor-default"
+                    >
                       {n}
-                    </span>
+                    </motion.span>
                   );
                 })()}
               </motion.div>
