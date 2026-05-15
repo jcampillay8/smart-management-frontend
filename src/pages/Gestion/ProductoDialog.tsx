@@ -42,7 +42,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
   const [unidad, setUnidad] = useState("unidad");
   const [precioVenta, setPrecioVenta] = useState("");
   const [marca, setMarca] = useState("");
-  const [proveedor, setProveedor] = useState("");
+  const [proveedorId, setProveedorId] = useState("");
   const [codigoBarra, setCodigoBarra] = useState("");
   const [sku, setSku] = useState("");
   const [imagenUrl, setImagenUrl] = useState<string | null>(null);
@@ -64,7 +64,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         setUnidad(editingProduct.unidad);
         setPrecioVenta(editingProduct.precio_venta ? String(editingProduct.precio_venta) : "");
         setMarca(editingProduct.marca ?? "");
-        setProveedor(editingProduct.proveedor ?? "");
+        setProveedorId(editingProduct.proveedor_id ?? "none");
         setCodigoBarra(editingProduct.codigo_barra ?? "");
         setSku(editingProduct.sku ?? "");
         setImagenUrl(editingProduct.imagen_url ?? null);
@@ -98,7 +98,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
     setUnidad("unidad");
     setPrecioVenta("");
     setMarca("");
-    setProveedor("");
+    setProveedorId("");
     setCodigoBarra("");
     setSku("");
     setImagenUrl(null);
@@ -143,7 +143,7 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
         iva_porcentaje: 19,
         precio_venta: precioVenta ? Number(precioVenta) : null,
         marca: marca.trim() || null,
-        proveedor: proveedor.trim() || null,
+        proveedor_id: proveedorId === "none" || !proveedorId ? null : proveedorId,
         codigo_barra: codigoBarra.trim() || null,
         sku: sku.trim() || null,
         imagen_url: imagenUrl,
@@ -334,14 +334,14 @@ export function ProductoDialog({ open, onOpenChange, categorias, editingProduct,
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Proveedor (opcional)</Label>
-              <Select value={proveedor} onValueChange={setProveedor}>
+              <Select value={proveedorId} onValueChange={setProveedorId}>
                 <SelectTrigger className="h-10 bg-background border rounded-xl">
                   <SelectValue placeholder="Seleccionar proveedor..." />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Sin proveedor</SelectItem>
                   {proveedores.map(p => (
-                    <SelectItem key={p.id} value={p.nombre_empresa}>{p.nombre_empresa}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{p.nombre_empresa}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

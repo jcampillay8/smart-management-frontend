@@ -37,6 +37,7 @@ export interface Producto {
   unidad_conversion?: string | null;
   marca?: string | null;
   proveedor?: string | null;
+  proveedor_id?: string | null;
   sku?: string | null;
   dias_alerta_vencimiento?: number;
   bodegas_config: { bodega_id: string; stock_minimo: number }[];

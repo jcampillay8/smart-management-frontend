@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
 import api from "../lib/api";
 
 const API_URL = api.defaults.baseURL;
@@ -28,15 +29,17 @@ const menuItems = [
 interface SidebarProps {
   logo: string | null;
   name?: string;
+  tipoNegocio?: string | null;
   isOpen?: boolean;
   onClose?: () => void;
 }
 
-export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
+export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isPanelEjecutivoOpen, setIsPanelEjecutivoOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
   // Notif badge from localStorage
   const [hasCritical, setHasCritical] = useState(false);
@@ -82,72 +85,106 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
 
   const sidebarContent = (
     <>
-      <div className="p-6 flex items-center justify-between gap-2 min-w-0 border-b border-border/50">
-        <AnimatePresence mode="wait">
-          {(!isCollapsed || isOpen) && (
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              className="flex items-center gap-3 min-w-0 flex-1"
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
-                {logo ? (
-                  <img 
-                    src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
-                    className="h-full w-full object-contain p-1" 
-                    alt="Logo" 
-                  />
-                ) : (
-                  <Package className="h-5 w-5 text-primary" />
-                )}
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-black text-[11px] leading-tight tracking-widest uppercase whitespace-pre-wrap break-words">
-                  {name || "SIOCI"}
-                </span>
-              </div>
-            </motion.div>
-          )}
-          {isCollapsed && !isOpen && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mx-auto"
-            >
-              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden shadow-sm">
-                {logo ? (
-                  <img 
-                    src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
-                    className="h-full w-full object-contain p-1" 
-                    alt="Logo" 
-                  />
-                ) : (
-                  <Package className="h-5 w-5 text-primary" />
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* Toggle Button for Desktop */}
-        <button 
+      <div className="relative px-5 flex items-center h-[89px] flex-none border-b border-border/50 overflow-hidden group/header">
+        {/* Toggle Button - Synchronized Animation */}
+        <motion.button 
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden md:flex h-7 w-7 rounded-lg hover:bg-secondary items-center justify-center transition-colors border border-transparent hover:border-border shrink-0 ml-2"
+          initial={false}
+          animate={{ 
+            right: isCollapsed && !isOpen ? 20 : 12,
+            backgroundColor: isCollapsed && !isOpen ? "hsl(var(--primary) / 0.1)" : "hsl(var(--secondary) / 0.5)",
+            width: isCollapsed && !isOpen ? 40 : 32,
+            height: isCollapsed && !isOpen ? 40 : 32,
+            borderRadius: isCollapsed && !isOpen ? "0.75rem" : "0.5rem",
+          }}
+          className={cn(
+            "absolute hidden md:flex items-center justify-center transition-all duration-300 opacity-0 group-hover:opacity-100 z-50 text-primary border border-border/50 backdrop-blur-sm",
+            !isCollapsed && "text-muted-foreground hover:text-foreground hover:bg-secondary"
+          )}
         >
-          {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+          {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={18} />}
+        </motion.button>
 
-        {/* Close Button for Mobile */}
+        <div className="flex items-center gap-4 min-w-0 flex-1">
+          <div className={cn(
+            "h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 overflow-hidden shrink-0 shadow-inner relative transition-opacity duration-300",
+            isCollapsed && !isOpen && "group-hover:opacity-0"
+          )}>
+            {logo ? (
+              <img 
+                src={logo.startsWith("http") ? logo : `${API_URL || "http://localhost:8000"}${logo.startsWith("/") ? "" : "/"}${logo}`} 
+                className="h-full w-full object-contain" 
+                alt="Logo" 
+              />
+            ) : (
+              <Package className="h-6 w-6 text-primary" />
+            )}
+          </div>
+          
+          <AnimatePresence>
+            {(!isCollapsed || isOpen) && (
+              <motion.div
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -5 }}
+                className="flex flex-col min-w-0 overflow-hidden"
+              >
+                {(() => {
+                  const n = name || "SIOCI";
+                  const isLight = theme === "light";
+                  const isCosmic = theme === "cosmic-blue";
+                  const hoverShadow = isLight 
+                    ? "2px 2px 12px rgba(0,0,0,0.12), 0 0 18px rgba(0,0,0,0.04)"
+                    : isCosmic
+                      ? "0 0 15px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.25), 0 0 50px rgba(255,255,255,0.1)"
+                      : "0 0 15px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.25), 0 0 50px hsl(var(--primary) / 0.1)";
+
+                  if (tipoNegocio) {
+                    return (
+                      <motion.div 
+                        whileHover={{ 
+                          textShadow: hoverShadow,
+                        }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="flex flex-col -space-y-0.5 cursor-default group/name"
+                      >
+                        <span className="text-[11px] font-semibold text-primary uppercase tracking-[0.15em] leading-none">
+                          {tipoNegocio}
+                        </span>
+                        <span className="font-bold text-base tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis">
+                          {n}
+                        </span>
+                      </motion.div>
+                    );
+                  }
+                  
+                  return (
+                    <motion.span 
+                      whileHover={{ 
+                        textShadow: hoverShadow,
+                      }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="font-bold text-base leading-tight tracking-tight uppercase whitespace-nowrap overflow-hidden text-ellipsis cursor-default"
+                    >
+                      {n}
+                    </motion.span>
+                  );
+                })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+        
+        {/* Close Button for Mobile (always visible on mobile) */}
         <button 
           onClick={onClose}
-          className="md:hidden h-8 w-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors border border-border"
+          className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 h-8 w-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors border border-border"
         >
           <X size={18} />
         </button>
       </div>
 
-      <nav className="flex-1 px-3 space-y-1 mt-2 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-2 space-y-1 mt-2 overflow-y-auto overflow-x-hidden custom-scrollbar">
         {menuItems.map((item) => {
           const isActive = item.exact
             ? location.pathname === item.path
@@ -158,17 +195,28 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
               key={item.path}
               to={item.path}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
+                "flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden",
                 isActive 
                   ? "bg-primary text-primary-foreground shadow-md shadow-primary/20" 
                   : "hover:bg-secondary text-muted-foreground hover:text-foreground"
               )}
             >
-              <item.icon size={20} className={cn(
-                "shrink-0",
-                isActive ? "text-primary-foreground" : "group-hover:text-primary transition-colors"
-              )} />
-               
+              <div className="relative shrink-0 w-10 flex justify-center">
+                <item.icon size={20} className={cn(
+                  isActive ? "text-primary-foreground" : "group-hover:text-primary transition-colors"
+                )} />
+                {showBadge && (
+                  <span className={cn(
+                    "absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center rounded-full text-[9px] font-bold border-2 border-background px-0.5",
+                    hasCritical
+                      ? "bg-destructive text-destructive-foreground animate-pulse"
+                      : "bg-amber-500 text-white"
+                  )}>
+                    {notifCount > 9 ? "9+" : notifCount}
+                  </span>
+                )}
+              </div>
+              
               {(!isCollapsed || isOpen) && (
                 <motion.span
                   initial={{ opacity: 0 }}
@@ -191,19 +239,33 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
 
         {/* Panel Ejecutivo */}
         <div className="pt-2">
-          <div className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group relative",
-            panelEjecutivoItems.some(item => location.pathname === item.path)
-              ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-              : "hover:bg-secondary text-muted-foreground hover:text-foreground"
-          )}>
-            <Link to="/reportes/resumen-general" className="flex items-center gap-3 flex-1">
-              <LayoutDashboard size={20} className={cn(
-                "shrink-0",
-                panelEjecutivoItems.some(item => location.pathname === item.path)
-                  ? "text-primary-foreground"
-                  : "group-hover:text-primary transition-colors"
-              )} />
+          <div
+            className={cn(
+              "flex items-center gap-4 px-3 py-2.5 rounded-xl transition-all duration-200 group relative overflow-hidden cursor-pointer",
+              panelEjecutivoItems.some(item => location.pathname === item.path)
+                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                : "hover:bg-secondary text-muted-foreground hover:text-foreground"
+            )}
+            onClick={(e) => {
+              if (!isCollapsed || isOpen) {
+                e.preventDefault();
+                setIsPanelEjecutivoOpen(!isPanelEjecutivoOpen);
+              }
+            }}
+          >
+            <Link 
+              to="/reportes/resumen-general" 
+              className="flex items-center gap-4 flex-1"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative shrink-0 w-10 flex justify-center">
+                <LayoutDashboard size={20} className={cn(
+                  "shrink-0",
+                  panelEjecutivoItems.some(item => location.pathname === item.path)
+                    ? "text-primary-foreground"
+                    : "group-hover:text-primary transition-colors"
+                )} />
+              </div>
               
               {(!isCollapsed || isOpen) && (
                 <motion.span
@@ -211,18 +273,18 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
                   animate={{ opacity: 1 }}
                   className="font-medium text-sm whitespace-nowrap flex-1 text-left"
                 >
-                Panel Ejecutivo
-              </motion.span>
+                  Panel Ejecutivo
+                </motion.span>
               )}
             </Link>
             
             {(!isCollapsed || isOpen) && (
               <button
                 onClick={(e) => {
-                  e.preventDefault();
+                  e.stopPropagation();
                   setIsPanelEjecutivoOpen(!isPanelEjecutivoOpen);
                 }}
-                className="hover:bg-secondary/50 rounded p-1"
+                className="hover:bg-secondary/50 rounded p-1 shrink-0"
               >
                 <ChevronDown 
                   size={16} 
@@ -232,6 +294,13 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
                   )} 
                 />
               </button>
+            )}
+
+            {panelEjecutivoItems.some(item => location.pathname === item.path) && (
+              <motion.div 
+                layoutId="active-pill"
+                className="absolute left-0 w-1 h-5 bg-primary-foreground rounded-r-full"
+              />
             )}
           </div>
 
@@ -266,13 +335,22 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
         </div>
       </nav>
 
-      <div className="p-4 border-t border-border mt-auto bg-background/50 flex flex-col gap-2">
-        {(!isCollapsed || isOpen) && (
-          <div className="flex items-center justify-between px-2">
-            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">EasyStock v1.0</span>
-            <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          </div>
-        )}
+      <div className="p-4 border-t border-border mt-auto bg-background/50 h-[53px] flex items-center overflow-x-hidden overflow-y-hidden shrink-0">
+        <AnimatePresence>
+          {(!isCollapsed || isOpen) && (
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-between w-full px-2"
+            >
+              <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest whitespace-nowrap">
+                EasyStock v1.0
+              </span>
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse cosmic-star shrink-0 ml-2" />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
@@ -289,7 +367,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={onClose}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 md:hidden"
+              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] md:hidden"
             />
             {/* Sidebar */}
             <motion.aside
@@ -297,7 +375,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 bottom-0 w-[280px] bg-background border-r border-border z-50 md:hidden flex flex-col shadow-2xl"
+              className="fixed left-0 top-0 bottom-0 w-[280px] bg-background border-r border-border z-[100] md:hidden flex flex-col shadow-2xl"
             >
               {sidebarContent}
             </motion.aside>
@@ -308,7 +386,7 @@ export default function Sidebar({ logo, name, isOpen, onClose }: SidebarProps) {
       {/* Desktop Sidebar */}
       <motion.aside
         animate={{ width: isCollapsed ? 80 : 260 }}
-        className="hidden md:flex flex-col h-screen glass border-r border-border sticky top-0 z-40 transition-all duration-300 ease-in-out"
+        className="hidden md:flex flex-col h-screen glass border-r border-border sticky top-0 z-40 overflow-hidden group"
       >
         {sidebarContent}
       </motion.aside>

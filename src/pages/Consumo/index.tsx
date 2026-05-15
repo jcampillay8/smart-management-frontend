@@ -12,7 +12,7 @@ import { ConsumoLog } from "./ConsumoLog";
 import { ConsumoEditDialog } from "./ConsumoEditDialog";
 import { ConsumptionRecord } from "./types";
 import { Button } from "../../components/ui/button";
-import { Dialog, DialogContent } from "../../components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../../components/ui/dialog";
 import { cn } from "../../lib/utils";
 
 import { AreaSelector } from "../../components/AreaSelector";
@@ -232,6 +232,8 @@ export default function Consumo() {
 
       <Dialog open={showLogMobile} onOpenChange={setShowLogMobile}>
         <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden bg-transparent border-0">
+          <DialogTitle className="sr-only">Historial de Consumo</DialogTitle>
+          <DialogDescription className="sr-only">Registro de movimientos de consumo</DialogDescription>
           <ConsumoLog 
             records={consumptionLog}
             onRefresh={refreshLog}

@@ -126,13 +126,8 @@ export function useConsumo(bodegaId: string = "all", areaId: string | null = nul
   };
 
   const filteredProducts = useMemo(() => {
-    return productos.filter(p => {
-      const stock = stockByProduct[p.id] ?? 0;
-      const hasLots = (lotsByProduct[p.id] ?? []).length > 0;
-      if (stock === 0 && !hasLots) return false;
-      return true;
-    });
-  }, [productos, stockByProduct, lotsByProduct]);
+    return productos;
+  }, [productos]);
 
   const groupedProducts = useMemo(() => {
     return categorias

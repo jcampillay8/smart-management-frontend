@@ -56,7 +56,7 @@ export function useEventos() {
 
       // Load current stocks
       try {
-        const stockRes = await api.get("/inventory/product-bodega");
+        const stockRes = await api.get("/inventory/product-setup");
         setStocks(stockRes.data || []);
       } catch (e) {
         console.error("Failed to load stocks:", e);
