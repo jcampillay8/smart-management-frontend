@@ -83,7 +83,7 @@ export function IncidenciaDialog({ open, onOpenChange, compraId, proveedorEmail,
 
   const loadTemplates = async () => {
     try {
-      const res = await api.get("/purchases/email-templates/");
+      const res = await api.get("/purchases/email-templates");
       setTemplates(res.data || []);
     } catch (e) {
       console.error("Error loading templates", e);

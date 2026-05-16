@@ -106,9 +106,9 @@ export default function InformesPage() {
     const fromStr = format(dateFrom, "yyyy-MM-dd");
     const toStr = format(dateTo, "yyyy-MM-dd");
     try {
-      const [regsRes, stockRes] = await Promise.all([
-        fetch(`/api/inventory/history/?fecha_desde=${fromStr}&fecha_hasta=${toStr}`).then(r => r.json()),
-        fetch(`/api/inventory/stock/status`).then(r => r.json()),
+      const [historyData, statusData] = await Promise.all([
+        api.get(`/inventory/history?fecha_desde=${fromStr}&fecha_hasta=${toStr}`).then(r => r.data),
+        api.get(`/inventory/stock/status`).then(r => r.data),
       ]);
       const lines: string[] = [];
       lines.push("Informe de Inventario");
@@ -117,16 +117,16 @@ export default function InformesPage() {
       lines.push("STOCK ACTUAL");
       lines.push("Producto,Categoria,Unidad,Stock Minimo,Cantidad Actual");
       productos.forEach(p => {
-        const stock = stockRes.find((s: any) => s.producto_id === p.id);
+        const stock = statusData.find((s: any) => s.producto_id === p.id);
         const cat = categorias.find(c => c.id === p.categoria_id);
-        lines.push(`"${p.nombre}","${cat?.nombre ?? ""}","${p.unidad}",${p.stock_minimo ?? 0},${stock?.stock_actual ?? 0}`);
+        lines.push(`${p.nombre},${cat?.nombre ?? "N/A"},${p.unidad},${p.stock_minimo},${stock?.stock_actual ?? 0}`);
       });
       lines.push("");
-      lines.push("MOVIMIENTOS DEL PERIODO");
-      lines.push("Fecha,Producto,Tipo,Cantidad,Motivo Merma,Descripcion");
-      (regsRes || []).forEach((r: any) => {
-        const prod = productos.find(p => p.id === r.producto_id);
-        lines.push(`${r.fecha_recuento},"${prod?.nombre ?? "?"}",${r.tipo_movimiento},${r.cantidad},"${r.motivo_merma ?? ""}","${r.descripcion_merma ?? ""}"`);
+      lines.push("HISTORIAL DE MOVIMIENTOS");
+      lines.push("Fecha,Producto,Tipo,Cantidad,Bodega");
+      historyData.forEach((r: any) => {
+        const p = productos.find(pr => pr.id === r.producto_id);
+        lines.push(`${r.fecha_recuento},"${p?.nombre ?? "?"}",${r.tipo_movimiento},${r.cantidad},"${r.motivo_merma ?? ""}","${r.descripcion_merma ?? ""}"`);
       });
       return { csv: lines.join("\n"), fileName: `Analiticas ${format(dateFrom, "dd-MM-yyyy")} a ${format(dateTo, "dd-MM-yyyy")}.csv` };
     } catch (e) {

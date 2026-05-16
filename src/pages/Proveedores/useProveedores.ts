@@ -11,7 +11,7 @@ export function useProveedores() {
 
   const loadData = useCallback(async () => {
     try {
-      const res = await api.get("/purchases/suppliers/");
+      const res = await api.get("/purchases/suppliers");
       setProveedores(res.data ?? []);
     } catch (e) {
       toast.error("Error al cargar proveedores");
@@ -25,7 +25,7 @@ export function useProveedores() {
   const createProveedor = async (data: Partial<Proveedor>) => {
     setSaving(true);
     try {
-      await api.post("/purchases/suppliers/", data);
+      await api.post("/purchases/suppliers", data);
       toast.success("Proveedor creado");
       loadData();
     } catch (e: any) {

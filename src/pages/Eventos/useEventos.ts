@@ -19,7 +19,7 @@ export function useEventos() {
       // Load events (may fail if backend has issues)
       let eventosData = [];
       try {
-        const res = await api.get("/operations/events/");
+        const res = await api.get("/operations/events");
         eventosData = res.data || [];
       } catch (e) {
         console.error("Failed to load events:", e);
@@ -48,7 +48,7 @@ export function useEventos() {
 
       // Load recipes
       try {
-        const rRes = await api.get("/operations/recipes/");
+        const rRes = await api.get("/operations/recipes");
         setRecetas(rRes.data || []);
       } catch (e) {
         console.error("Failed to load recipes:", e);
@@ -80,7 +80,7 @@ export function useEventos() {
 
   const createEvento = async (nombre: string, fecha: string, items: EventoItem[], recetas: EventoReceta[], valorPublico?: number) => {
     try {
-      await api.post("/operations/events/", {
+      await api.post("/operations/events", {
         nombre,
         fecha,
         productos: items,

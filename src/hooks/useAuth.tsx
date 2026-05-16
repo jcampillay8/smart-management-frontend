@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async () => {
     try {
-      const res = await api.get("/user/profile/");
+      const res = await api.get("/user/profile");
       const userData: User = res.data;
       setUser(userData);
       setRole(userData.role);
@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       formData.append("username", email);
       formData.append("password", password);
 
-      const res = await api.post("/login/", formData, {
+      const res = await api.post("/login", formData, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" }
       });
 
@@ -93,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await api.post("/logout/");
+      await api.post("/logout");
     } catch (e) {
       console.error("Logout error:", e);
     }

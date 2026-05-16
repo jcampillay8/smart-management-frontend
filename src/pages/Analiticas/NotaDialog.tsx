@@ -41,7 +41,7 @@ export function NotaDialog({ open, onOpenChange, editingNota, onSave, saving }: 
   useEffect(() => {
     const loadUsers = async () => {
       try {
-        const res = await api.get("/auth/users/");
+        const res = await api.get("/user/admin/all");
         setAllUsers(res.data);
         
         if (open && editingNota) {

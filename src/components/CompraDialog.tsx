@@ -80,7 +80,7 @@ export default function CompraDialog({ open, onOpenChange, onSaved, editingCompr
   const loadData = async () => {
     try {
       const [tRes, uRes] = await Promise.all([
-        api.get("/purchases/email-templates/"),
+        api.get("/purchases/email-templates"),
         api.get("/settings/users")
       ]);
       setTemplates(tRes.data || []);
@@ -226,7 +226,7 @@ export default function CompraDialog({ open, onOpenChange, onSaved, editingCompr
           precio_unitario: Number(it.precio_unitario) || 0,
         }))
       };
-      await api.post("/purchases/", payload);
+      await api.post("/purchases", payload);
       toast.success("Compra creada como pendiente");
       onOpenChange(false);
       onSaved?.();

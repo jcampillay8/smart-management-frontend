@@ -26,7 +26,7 @@ export function ExportadorInformes() {
 
     try {
       // Petición al endpoint de historial con filtros de fecha
-      const res = await api.get(`/inventory/history/?start_date=${dateFrom}&end_date=${dateTo}`);
+      const res = await api.get(`/inventory/history?fecha_desde=${dateFrom}&fecha_hasta=${dateTo}`);
       const data = res.data;
 
       if (!data || data.length === 0) {

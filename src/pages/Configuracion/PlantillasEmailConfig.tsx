@@ -68,7 +68,7 @@ export function PlantillasEmailConfig() {
   const loadPlantillas = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/purchases/email-templates/");
+      const res = await api.get("/purchases/email-templates");
       setPlantillas(res.data);
     } catch (e: any) {
       toast.error("Error al cargar plantillas de correo");
@@ -138,7 +138,7 @@ export function PlantillasEmailConfig() {
         await api.put(`/purchases/email-templates/${editingPlantilla.id}`, payload);
         toast.success("Plantilla actualizada");
       } else {
-        await api.post("/purchases/email-templates/", payload);
+        await api.post("/purchases/email-templates", payload);
         toast.success("Plantilla creada");
       }
       setDialogOpen(false);

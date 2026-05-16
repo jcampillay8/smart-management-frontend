@@ -14,7 +14,7 @@ export function useConfiguracion(isAdmin: boolean) {
     setLoading(true);
     try {
       const [uRes, sRes] = await Promise.all([
-        api.get("/user/admin/all/"),
+        api.get("/user/admin/all"),
         api.get("/settings/restaurant")
       ]);
       setUsers(uRes.data);
@@ -40,7 +40,7 @@ export function useConfiguracion(isAdmin: boolean) {
 
   const createUser = async (data: any) => {
     try {
-      await api.post("/account/", data);
+      await api.post("/account", data);
       toast.success("Usuario creado exitosamente");
       loadData();
     } catch (e: any) {

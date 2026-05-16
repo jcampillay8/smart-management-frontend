@@ -49,7 +49,7 @@ export function AddingMercaderiaDialog({ open, onOpenChange, onSuccess }: Props)
   const loadPendingPurchases = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/purchases/");
+      const res = await api.get("/purchases");
       const pending = res.data.filter((c: any) => c.estado === "pendiente");
       setCompras(pending);
     } catch (e) {

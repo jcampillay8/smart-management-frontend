@@ -11,7 +11,7 @@ export function useCompras() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/purchases/");
+      const res = await api.get("/purchases");
       setCompras(res.data);
     } catch (error) {
       toast.error("Error al cargar compras");

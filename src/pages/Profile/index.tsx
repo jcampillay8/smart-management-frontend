@@ -32,7 +32,7 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await api.put("/user/profile/", {
+      await api.put("/user/profile", {
         first_name: firstName,
         last_name: lastName,
         occupation: occupation,

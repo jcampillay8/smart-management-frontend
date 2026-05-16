@@ -36,7 +36,7 @@ export function useNotas() {
   const fetchNotas = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get("/notes/");
+      const res = await api.get("/notes");
       setNotas(res.data);
     } catch (e) {
       console.error("Error cargando notas:", e);
@@ -52,7 +52,7 @@ export function useNotas() {
   const createNota = async (data: { titulo?: string; contenido: string; urgencia: string; fecha?: string; menciones: number[] }) => {
     setSaving(true);
     try {
-      await api.post("/notes/", data);
+      await api.post("/notes", data);
       await fetchNotas();
     } finally {
       setSaving(false);

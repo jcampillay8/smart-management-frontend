@@ -382,7 +382,7 @@ export function useInformes(selectedBodegas: string[] = ["all"]) {
         api.get("/inventory/categories"),
         api.get("/inventory/products"),
         api.get("/inventory/bodegas"),
-        api.get("/purchases/"),
+        api.get("/purchases"),
       ]);
 
       setCategorias(catRes.data || []);
@@ -392,7 +392,7 @@ export function useInformes(selectedBodegas: string[] = ["all"]) {
 
       const fromStr = format(dateFrom, "yyyy-MM-dd");
       const toStr = format(dateTo, "yyyy-MM-dd");
-      const historyRes = await api.get(`/inventory/history/?fecha_desde=${fromStr}&fecha_hasta=${toStr}`);
+      const historyRes = await api.get(`/inventory/history?fecha_desde=${fromStr}&fecha_hasta=${toStr}`);
       setRegistros(historyRes.data || []);
 
     } catch (e) {

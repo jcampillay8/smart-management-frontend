@@ -14,7 +14,7 @@ export function useContarInventario() {
 
   const calcularDiscrepancias = async (bodegaId: string, productos: any[]) => {
     try {
-      const { data: historial } = await api.get("/inventory/history/");
+      const { data: historial } = await api.get("/inventory/history");
       
       const snapshot = buildInventorySnapshot(historial, new Date().toISOString(), bodegaId);
       const nombreBodega = bodegas.find(b => b.id === bodegaId)?.nombre || "Bodega";

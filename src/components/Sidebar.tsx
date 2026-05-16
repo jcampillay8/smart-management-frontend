@@ -386,7 +386,7 @@ export default function Sidebar({ logo, name, tipoNegocio, isOpen, onClose }: Si
       {/* Desktop Sidebar */}
       <motion.aside
         animate={{ width: isCollapsed ? 80 : 260 }}
-        className="hidden md:flex flex-col h-screen glass border-r border-border sticky top-0 z-40 overflow-hidden group"
+        className="hidden md:flex flex-col h-screen glass border-r border-border sticky top-0 z-[70] overflow-hidden group"
       >
         {sidebarContent}
       </motion.aside>

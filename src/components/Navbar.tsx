@@ -54,7 +54,7 @@ export default function Navbar({
   ];
 
   return (
-    <header className="h-20 glass border-b border-border sticky top-0 z-30 px-4 md:px-8 flex items-center justify-between gap-4">
+    <header className="h-20 glass border-b border-border sticky top-0 z-[60] px-4 md:px-8 flex items-center justify-between gap-4">
       {/* IZQUIERDA: Menú (Móvil) */}
       <div className="flex items-center gap-3 md:hidden">
         <button 

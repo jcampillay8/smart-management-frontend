@@ -32,7 +32,7 @@ export function AreasOperativasConfig() {
   const [selectedUsuariosIds, setSelectedUsuariosIds] = useState<number[]>([]);
 
   useEffect(() => {
-    api.get("/user/admin/all/").then(r => setUsers(r.data ?? [])).catch(() => {});
+    api.get("/user/admin/all").then(r => setUsers(r.data ?? [])).catch(() => {});
   }, []);
 
   const openNew = () => {
